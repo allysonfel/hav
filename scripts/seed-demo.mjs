@@ -75,7 +75,8 @@ await db.begin(async (tx) => {
 
   const investidores = {};
   for (const [k, nome] of Object.entries(NOMES)) {
-    const [i] = await tx`INSERT INTO investidores (nome, email) VALUES (${nome}, ${`${k}@demo.local`}) RETURNING id`;
+    const comLogin = k === "marcos.andrade" && process.env.SEED_SEM_LOGINS !== "sim";
+    const [i] = await tx`INSERT INTO investidores (nome, email, senha_hash, aceite_em) VALUES (${nome}, ${`${k}@demo.local`}, ${comLogin ? hash("hav-demo-2026") : null}, ${comLogin ? new Date() : null}) RETURNING id`;
     investidores[k] = i.id;
   }
 
@@ -124,4 +125,4 @@ await db.begin(async (tx) => {
 });
 
 await db.end();
-console.log("Demonstração criada. Painel: valdick@demo.local e suelen@demo.local, senha hav-demo-2026 (só local).");
+console.log("Demonstração criada. Painel: valdick@demo.local e suelen@demo.local. App: marcos.andrade@demo.local. Senha hav-demo-2026 (só local).");

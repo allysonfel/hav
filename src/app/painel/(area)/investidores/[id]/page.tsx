@@ -6,15 +6,16 @@ import { decifrar } from "@/lib/cifra";
 import { celularFormatado, cnpjFormatado } from "@/lib/cpf";
 import { brl, brl0, dataBr, haQuanto, kwh, mesAno, pct } from "@/lib/format";
 import { Kpi, Retorno } from "@/components/basicos";
-import { ativarInvestidor } from "../acoes";
+import { lerSegredo } from "@/lib/segredo";
+import { ativarInvestidor, gerarAcesso } from "../acoes";
 
 const cpfFormatado = (d: string) => `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 
-export default async function Investidor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string }> }) {
+export default async function Investidor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; acesso?: string }> }) {
   const u = await requireUser();
   const admin = eAdmin(u);
   const id = Number((await params).id);
-  const { ok } = await searchParams;
+  const { ok, acesso } = await searchParams;
   if (!Number.isInteger(id) || id < 1) notFound();
   const [i] = await sql<{ id: number; nome: string; email: string; celular: string; documento_cifrado: string | null; documento_final: string; pix_cifrado: string | null; ativo: boolean; ultimo_acesso: Date | null }[]>`
     SELECT id, nome, email, celular, documento_cifrado, documento_final, pix_cifrado, ativo, ultimo_acesso FROM investidores WHERE id = ${id}`;
@@ -29,6 +30,7 @@ export default async function Investidor({ params, searchParams }: { params: Pro
     FROM rateios r JOIN fechamentos f ON f.id = r.fechamento_id JOIN usinas us ON us.id = f.usina_id
     WHERE r.investidor_id = ${id} ORDER BY f.competencia DESC, us.nome LIMIT 60`;
 
+  const linkAcesso = admin && acesso ? await lerSegredo("acesso", id) : "";
   const investido = cotas.reduce((a, c) => a + c.valor_centavos, 0);
   const recebido = rateios.filter((r) => r.repasse_status === "pago").reduce((a, r) => a + r.receita_centavos, 0);
   const aReceber = rateios.filter((r) => r.repasse_status === "pendente").reduce((a, r) => a + r.receita_centavos, 0);
@@ -42,12 +44,25 @@ export default async function Investidor({ params, searchParams }: { params: Pro
   return (
     <>
       <Retorno ok={ok} mapaErro={{}} mapaOk={{ salvo: "Investidor salvo." }} />
+      {linkAcesso && (
+        <div className="card card-p" style={{ marginBottom: 16 }}>
+          <b>Link de acesso ao app de {i.nome}</b>
+          <p className="muted sm" style={{ margin: "4px 0 8px" }}>{acesso === "enviado" ? "Enviado por e-mail. " : "O e-mail não foi enviado. "}Aparece só agora e vale por 7 dias. Se precisar, repasse pelo WhatsApp.</p>
+          <div className="segredo" style={{ fontSize: 13, wordBreak: "break-all" }}>{linkAcesso}</div>
+        </div>
+      )}
       <Link className="btn btn-ghost" style={{ marginBottom: 14 }} href="/painel/investidores">← Voltar para investidores</Link>
       <div className="card card-p" style={{ marginBottom: 16 }}>
         <div className="section-head" style={{ marginBottom: 14 }}>
           <div className="linha"><h3 style={{ fontSize: 17 }}>{i.nome}</h3>{!i.ativo && <span className="pill pill-muted">Inativo</span>}</div>
           {admin && (
             <div className="linha">
+              {i.ativo && (
+                <form action={gerarAcesso}>
+                  <input type="hidden" name="id" value={i.id} />
+                  <button className="btn btn-gold">{i.ultimo_acesso ? "Novo link de acesso" : "Convidar para o app"}</button>
+                </form>
+              )}
               <Link className="btn btn-ghost" href={`/painel/investidores/${i.id}/editar`}>Editar</Link>
               <form action={ativarInvestidor}>
                 <input type="hidden" name="id" value={i.id} />

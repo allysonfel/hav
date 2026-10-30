@@ -9,6 +9,8 @@ import { audit } from "@/lib/audit";
 import { cifrar, hashDocumento } from "@/lib/cifra";
 import { celularValido, cnpjValido, cpfValido, soDigitos } from "@/lib/cpf";
 import { EMAIL } from "@/lib/settings";
+import { criarLink, enviarLink, VALIDADE } from "@/lib/acesso";
+import { guardarSegredo } from "@/lib/segredo";
 
 export async function salvarInvestidor(fd: FormData) {
   const u = await requireUser(["admin"]);
@@ -65,6 +67,20 @@ export async function ativarInvestidor(fd: FormData) {
   const r = await sql`UPDATE investidores SET ativo = ${ativo}, sessao_versao = sessao_versao + 1 WHERE id = ${id} RETURNING id`;
   if (r.length) await audit(`usuario:${u.id}`, ativo ? "investidor_reativado" : "investidor_desativado", "investidor", id);
   redirect(`/painel/investidores/${id}?ok=salvo`);
+}
+
+// Link de primeiro acesso ao app: vai por e-mail e aparece uma vez para o admin
+// poder repassar pelo WhatsApp.
+export async function gerarAcesso(fd: FormData) {
+  const u = await requireUser(["admin"]);
+  const id = Number(fd.get("id"));
+  const [i] = await sql<{ nome: string; email: string }[]>`SELECT nome, email FROM investidores WHERE id = ${id} AND ativo`;
+  if (!i) redirect(`/painel/investidores/${id}`);
+  const link = await criarLink(id, VALIDADE.convite);
+  const enviado = await enviarLink(i.email, i.nome, link, "convite");
+  await audit(`usuario:${u.id}`, "acesso_gerado", "investidor", id);
+  await guardarSegredo("acesso", id, link);
+  redirect(`/painel/investidores/${id}?acesso=${enviado ? "enviado" : "gerado"}`);
 }
 
 // Só sai quem não tem cota nem rateio; com histórico, o caminho é desativar.

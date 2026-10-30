@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { sql } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { audit } from "@/lib/audit";
-import { COMPETENCIA, centavosDe, mesAno, mesAtual, ppmDe, whDe, wpDe } from "@/lib/format";
+import { COMPETENCIA, centavosDe, mesAno, mesAtual, mesLongo, ppmDe, whDe, wpDe } from "@/lib/format";
 import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
 
 const texto = (fd: FormData, campo: string, max: number) => String(fd.get(campo) ?? "").trim().replace(/\s+/g, " ").slice(0, max);
@@ -159,6 +159,12 @@ export async function fecharMes(fd: FormData) {
   });
   if (erro) redirect(`${volta}?erro=${erro}`);
   await audit(`usuario:${u.id}`, "mes_fechado", "fechamento", id);
+  const [f] = await sql<{ usina: string; comp: string }[]>`
+    SELECT u.nome AS usina, to_char(f.competencia, 'YYYY-MM') AS comp FROM fechamentos f JOIN usinas u ON u.id = f.usina_id WHERE f.id = ${id}`;
+  await sql`
+    INSERT INTO avisos_investidor (investidor_id, titulo, texto, href)
+    SELECT investidor_id, ${`Relatório de ${mesLongo(f.comp)}`}, ${`${f.usina}: sua receita do mês já está disponível.`}, '/relatorios'
+    FROM rateios WHERE fechamento_id = ${id}`;
   redirect(`${volta}?ok=fechado`);
 }
 
@@ -191,10 +197,18 @@ export async function marcarRepasse(fd: FormData) {
   const r = pago
     ? await sql`
         UPDATE rateios SET repasse_status = 'pago', pago_em = now(), pago_por = ${u.id}
-        WHERE fechamento_id = ${fechamento} AND repasse_status = 'pendente' ${rateio ? sql`AND id = ${rateio}` : sql``} RETURNING id`
+        WHERE fechamento_id = ${fechamento} AND repasse_status = 'pendente' ${rateio ? sql`AND id = ${rateio}` : sql``} RETURNING id, investidor_id`
     : await sql`
         UPDATE rateios SET repasse_status = 'pendente', pago_em = NULL, pago_por = NULL
-        WHERE fechamento_id = ${fechamento} AND id = ${rateio} AND repasse_status = 'pago' RETURNING id`;
+        WHERE fechamento_id = ${fechamento} AND id = ${rateio} AND repasse_status = 'pago' RETURNING id, investidor_id`;
   if (r.length) await audit(`usuario:${u.id}`, pago ? "repasse_pago" : "repasse_desfeito", "fechamento", fechamento, `${r.length} repasse(s)`);
+  if (pago && r.length) {
+    const [f] = await sql<{ usina: string; comp: string }[]>`
+      SELECT u.nome AS usina, to_char(f.competencia, 'YYYY-MM') AS comp FROM fechamentos f JOIN usinas u ON u.id = f.usina_id WHERE f.id = ${fechamento}`;
+    const ids = r.map((x) => x.investidor_id as number);
+    await sql`
+      INSERT INTO avisos_investidor (investidor_id, titulo, texto, href)
+      SELECT unnest(${ids}::int[]), ${`Repasse de ${mesLongo(f.comp)}`}, ${`${f.usina}: repasse registrado como pago.`}, '/relatorios'`;
+  }
   redirect(`/painel/fechamentos/${fechamento}?ok=repasse`);
 }

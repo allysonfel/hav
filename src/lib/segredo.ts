@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 
 const NOME = "hav_segredo";
 
-export async function guardarSegredo(tipo: "usuario", id: number, senha: string) {
+export async function guardarSegredo(tipo: "usuario" | "acesso", id: number, senha: string) {
   (await cookies()).set(NOME, `${tipo}:${id}:${senha}`, {
     httpOnly: true,
     sameSite: "strict",
@@ -15,7 +15,7 @@ export async function guardarSegredo(tipo: "usuario", id: number, senha: string)
   });
 }
 
-export async function lerSegredo(tipo: "usuario", id: number): Promise<string> {
+export async function lerSegredo(tipo: "usuario" | "acesso", id: number): Promise<string> {
   const v = (await cookies()).get(NOME)?.value ?? "";
   const prefixo = `${tipo}:${id}:`;
   return v.startsWith(prefixo) ? v.slice(prefixo.length) : "";

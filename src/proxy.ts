@@ -3,18 +3,20 @@
 //    exportações têm limite próprio, mais baixo. Passou, responde 429.
 // 1. Content-Security-Policy com nonce novo a cada requisição: só roda script
 //    do próprio sistema (o Next aplica o nonce nos scripts dele sozinho).
-// 2. Atalho de redirecionamento: sem o cookie da equipe, o painel manda para a
-//    tela de entrar. NÃO é a checagem de segurança: assinatura, validade,
-//    conta ativa e perfil são conferidos em cada página, action e rota.
+// 2. Atalho de redirecionamento: sem o cookie certo, painel e app mandam para
+//    a própria tela de entrar. NÃO é a checagem de segurança: assinatura,
+//    validade, conta ativa e perfil são conferidos em cada página, action e rota.
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { dentroDoLimite, ipDe } from "@/lib/limiteRequisicoes";
 
 const LIMITE_GERAL = 240;
 const LIMITES: [regra: RegExp, max: number][] = [
-  [/^\/painel\/entrar$/, 20],
+  [/^\/(painel\/entrar|entrar|criar-conta|recuperar|acesso)$/, 20],
   [/\/exportar$/, 10],
 ];
+
+const PUBLICAS_APP = ["/entrar", "/criar-conta", "/recuperar", "/acesso", "/privacidade", "/manifest.webmanifest"];
 
 function muitas(esperarSeg: number, api: boolean) {
   const headers = { "Retry-After": String(esperarSeg) };
@@ -33,6 +35,7 @@ function csp(nonce: string): string {
     "img-src 'self' data:",
     "font-src 'self'",
     "connect-src 'self'",
+    "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -55,6 +58,9 @@ export function proxy(request: NextRequest) {
   const doPainel = pathname === "/painel" || pathname.startsWith("/painel/");
   if (doPainel && pathname !== "/painel/entrar" && !request.cookies.has("hav_equipe")) {
     return NextResponse.redirect(new URL("/painel/entrar", process.env.APP_URL || request.url));
+  }
+  if (!doPainel && !api && !PUBLICAS_APP.includes(pathname) && !request.cookies.has("hav_investidor")) {
+    return NextResponse.redirect(new URL("/entrar", process.env.APP_URL || request.url));
   }
 
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");

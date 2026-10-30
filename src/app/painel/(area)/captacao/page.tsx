@@ -37,6 +37,11 @@ export default async function Captacao({ searchParams }: { searchParams: Promise
           (SELECT string_agg(us.nome, ', ') FROM cotas c JOIN usinas us ON us.id = c.usina_id WHERE c.investidor_id = i.investidor_id AND c.ativa AND us.status = 'operando') AS cotista
         FROM interesses i WHERE i.usina_id = ANY(${ids}) ORDER BY i.status = 'desistiu', i.status = 'confirmado', i.criado_em DESC`
     : [];
+  // Pedidos de ampliação de cota em usinas que já operam.
+  const ampliacoes = await sql<Interesse[]>`
+    SELECT i.id, i.usina_id, i.investidor_id, i.nome, i.telefone, i.valor_centavos, i.origem, i.status, u.nome AS cotista
+    FROM interesses i JOIN usinas u ON u.id = i.usina_id
+    WHERE u.status <> 'captacao' AND i.status IN ('aguardando', 'negociacao') ORDER BY i.criado_em DESC`;
   const confirmando = interesses.find((i) => i.id === Number(sp.confirmar));
   const investidores = confirmando ? await sql<{ id: number; nome: string }[]>`SELECT id, nome FROM investidores WHERE ativo ORDER BY nome` : [];
 
@@ -135,6 +140,34 @@ export default async function Captacao({ searchParams }: { searchParams: Promise
           </div>
         );
       })}
+
+      {ampliacoes.length > 0 && (
+        <div className="card card-t">
+          <div className="section-head dentro"><h3>Pedidos de ampliação de cota</h3><span className="hint">Sinalizado pelo app do investidor</span></div>
+          <div className="tbl-wrap">
+            <table className="dt">
+              <thead><tr><th>Nome</th><th>Usina</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {ampliacoes.map((i) => (
+                  <tr key={i.id}>
+                    <td className="row-name">{i.nome}</td>
+                    <td>{i.cotista}</td>
+                    <td className="num">{brl0(i.valor_centavos)}</td>
+                    <td><span className={`pill ${PILL[i.status][0]}`}>{PILL[i.status][1]}</span></td>
+                    <td className="acoes">
+                      <div className="linha">
+                        {i.telefone && <a className="btn btn-ghost btn-sm" href={`tel:+55${i.telefone}`}>Ligar</a>}
+                        {i.status === "aguardando" && <AcaoStatus id={i.id} status="negociacao" texto="Negociar" />}
+                        <AcaoStatus id={i.id} status="desistiu" texto="Encerrar" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </>
   );
 }

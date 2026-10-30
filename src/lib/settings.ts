@@ -10,6 +10,8 @@ export type Settings = {
   diaFechamento: number;
   suporteWhatsapp: string;
   suporteEmail: string;
+  // Tela de oportunidades no app. Só ligar depois do parecer do advogado sobre a CVM.
+  oportunidades: boolean;
 };
 
 export const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,24}$/i;
@@ -26,6 +28,7 @@ export async function getSettings(): Promise<Settings> {
     diaFechamento: Number.isInteger(dia) && dia >= 0 && dia <= 28 ? dia : 0,
     suporteWhatsapp: typeof d.suporteWhatsapp === "string" && /^\d{12,13}$/.test(d.suporteWhatsapp) ? d.suporteWhatsapp : "",
     suporteEmail: typeof d.suporteEmail === "string" && EMAIL.test(d.suporteEmail) ? d.suporteEmail : "",
+    oportunidades: d.oportunidades === true,
   };
 }
 

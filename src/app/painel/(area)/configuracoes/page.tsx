@@ -20,8 +20,9 @@ async function salvar(fd: FormData) {
   if (!Number.isInteger(diaFechamento) || diaFechamento < 0 || diaFechamento > 28) redirect("/painel/configuracoes?erro=1");
   if (suporteWhatsapp && !/^\d{12,13}$/.test(suporteWhatsapp)) redirect("/painel/configuracoes?erro=1");
   if (suporteEmail && !EMAIL.test(suporteEmail)) redirect("/painel/configuracoes?erro=1");
-  await saveSettings({ empresa, razaoSocial, cnpj, diaFechamento, suporteWhatsapp, suporteEmail });
-  await audit(`usuario:${u.id}`, "configuracoes_salvas");
+  const oportunidades = fd.get("oportunidades") === "1";
+  await saveSettings({ empresa, razaoSocial, cnpj, diaFechamento, suporteWhatsapp, suporteEmail, oportunidades });
+  await audit(`usuario:${u.id}`, "configuracoes_salvas", null, null, `oportunidades ${oportunidades ? "ligada" : "desligada"}`);
   redirect("/painel/configuracoes?ok=1");
 }
 
@@ -47,6 +48,12 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
         </div>
         <div className="field"><label htmlFor="whatsapp">WhatsApp de atendimento ao investidor</label><input id="whatsapp" name="whatsapp" defaultValue={s.suporteWhatsapp} maxLength={18} inputMode="tel" /></div>
         <div className="field"><label htmlFor="email">E-mail de atendimento ao investidor</label><input id="email" name="email" type="email" defaultValue={s.suporteEmail} maxLength={160} /></div>
+        <div className="box-title">App do investidor</div>
+        <label className="linha sm" style={{ marginBottom: 6, flexWrap: "nowrap" }}>
+          <input type="checkbox" id="oportunidades" name="oportunidades" value="1" defaultChecked={s.oportunidades} />
+          <b>Mostrar Oportunidades no app</b>
+        </label>
+        <p className="muted sm" style={{ margin: "0 0 14px" }}>Desligado, os investidores não veem usinas em captação nem o botão Quero investir. Ligue só depois da orientação do advogado sobre oferta de cotas.</p>
         <div className="field"><label>Fuso horário</label><input value="América/Recife (UTC-3)" disabled readOnly /></div>
         <button className="btn btn-primary">Salvar alterações</button>
       </form>

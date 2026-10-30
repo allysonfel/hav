@@ -1,5 +1,6 @@
 // Ícones do protótipo aprovado (traço de 1,8 px, 24x24).
 const IC = {
+  inicio: <><path d="M4 11.5 12 4l8 7.5" /><path d="M6 10v9h12v-9" /></>,
   geral: <><rect x="3" y="12" width="4" height="8" rx="1" /><rect x="10" y="7" width="4" height="13" rx="1" /><rect x="17" y="3" width="4" height="17" rx="1" /></>,
   usinas: <><path d="M4 21V9l8-5 8 5v12" /><path d="M9 21v-7h6v7" /></>,
   investidores: <><circle cx="9" cy="8" r="3.2" /><path d="M3.5 20c0-3.3 2.6-5.6 5.5-5.6s5.5 2.3 5.5 5.6" /><path d="M16.5 8.3a3 3 0 1 1 0-5.9" /><path d="M15.5 14.3c2.6.3 4.5 2.4 4.5 5.7" /></>,

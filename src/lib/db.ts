@@ -146,6 +146,30 @@ CREATE TABLE IF NOT EXISTS rateios (
 );
 CREATE INDEX IF NOT EXISTS rateios_investidor_idx ON rateios (investidor_id);
 
+-- Link de primeiro acesso ou de nova senha do investidor. Só o hash fica aqui.
+CREATE TABLE IF NOT EXISTS acesso_tokens (
+  id SERIAL PRIMARY KEY,
+  investidor_id INT NOT NULL REFERENCES investidores(id),
+  token_hash TEXT NOT NULL UNIQUE,
+  expira_em TIMESTAMPTZ NOT NULL,
+  usado_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Avisos dentro do app do investidor.
+CREATE TABLE IF NOT EXISTS avisos_investidor (
+  id SERIAL PRIMARY KEY,
+  investidor_id INT NOT NULL REFERENCES investidores(id),
+  titulo TEXT NOT NULL,
+  texto TEXT NOT NULL DEFAULT '',
+  href TEXT NOT NULL DEFAULT '/',
+  lido_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS avisos_investidor_idx ON avisos_investidor (investidor_id, criado_em DESC);
+
+ALTER TABLE investidores ADD COLUMN IF NOT EXISTS aceite_em TIMESTAMPTZ;
+
 -- Funil da captação.
 CREATE TABLE IF NOT EXISTS interesses (
   id SERIAL PRIMARY KEY,
@@ -159,6 +183,9 @@ CREATE TABLE IF NOT EXISTS interesses (
   observacao TEXT NOT NULL DEFAULT '',
   criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Um pedido em aberto por investidor em cada usina.
+CREATE UNIQUE INDEX IF NOT EXISTS interesses_aberto_idx ON interesses (usina_id, investidor_id)
+  WHERE investidor_id IS NOT NULL AND status IN ('aguardando', 'negociacao');
 `;
 
 let pronto: Promise<void> | null = null;
