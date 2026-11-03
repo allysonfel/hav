@@ -6,6 +6,8 @@ import { cnpjFormatado, cnpjValido } from "@/lib/cpf";
 import { Retorno } from "@/components/basicos";
 import { emailConfigurado } from "@/lib/email";
 import { iaConfigurada } from "@/lib/ia";
+import { demoAtiva } from "@/lib/demo";
+import { alternarDemo } from "./acoes";
 
 async function salvar(fd: FormData) {
   "use server";
@@ -33,10 +35,11 @@ async function salvar(fd: FormData) {
   redirect("/painel/configuracoes?ok=1");
 }
 
-export default async function Configuracoes({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
+export default async function Configuracoes({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string; demo?: string; demo_erro?: string }> }) {
   await requireUser(["admin"]);
   const sp = await searchParams;
   const s = await getSettings();
+  const demo = await demoAtiva();
   return (
     <>
       <Retorno ok={sp.ok} erro={sp.erro} mapaOk={{ "1": "Configurações salvas." }} mapaErro={{ "1": "Confira os dados (CNPJ, WhatsApp ou e-mail inválido)." }} />
@@ -81,6 +84,23 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
         <div className="field"><label>Fuso horário</label><input value="América/Recife (UTC-3)" disabled readOnly /></div>
         <button className="btn btn-primary">Salvar alterações</button>
       </form>
+
+      <div className="card card-p" style={{ maxWidth: 640, marginTop: 16 }} id="demonstracao">
+        <div className="linha" style={{ justifyContent: "space-between", marginBottom: 8 }}>
+          <h4 style={{ margin: 0, fontSize: 14 }}>Dados de demonstração</h4>
+          {demo ? <span className="pill pill-warn">Ativos</span> : <span className="pill pill-muted">Desligados</span>}
+        </div>
+        {sp.demo && <div className="aviso ok">{sp.demo === "ligada" ? "Dados de demonstração carregados." : "Dados de demonstração removidos."}</div>}
+        {sp.demo_erro && <div className="aviso erro">{sp.demo_erro}</div>}
+        <p className="muted sm" style={{ margin: "0 0 14px" }}>
+          Preenche o sistema com 3 usinas, 10 investidores, 24 meses fechados com rateio e a captação da Serra Clara, para apresentar o painel em uso.
+          Os investidores fictícios não têm acesso ao app e nunca recebem e-mail. Ao desligar, sai só o que a demonstração criou; os cadastros reais ficam.
+        </p>
+        <form action={alternarDemo}>
+          <input type="hidden" name="acao" value={demo ? "desligar" : "ligar"} />
+          <button className={demo ? "btn btn-ghost" : "btn btn-gold"}>{demo ? "Remover dados de demonstração" : "Carregar dados de demonstração"}</button>
+        </form>
+      </div>
     </>
   );
 }

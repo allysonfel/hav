@@ -50,7 +50,7 @@ async function main() {
   } finally {
     await rm(tmp, { recursive: true, force: true });
   }
-  for (const tabela of ["usuarios", "clientes", "conversas", "mensagens", "audit_log"]) {
+  for (const tabela of ["usuarios", "usinas", "investidores", "cotas", "fechamentos", "rateios", "audit_log"]) {
     if (!new RegExp(`TABLE DATA public ${tabela} `).test(lista)) throw new Error(`Tabela ${tabela} ausente no dump.`);
   }
 

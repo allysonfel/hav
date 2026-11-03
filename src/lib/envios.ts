@@ -10,6 +10,7 @@ import { brl, kwh, mesLongo, pct } from "./format";
 import { relatorioInvestidor } from "./relatorios";
 import { pdfInvestidor } from "./pdf/RelatoriosPdf";
 import { getSettings } from "./settings";
+import { EMAIL_DEMO } from "./demo";
 
 const ESPERA_MIN = [10, 60, 360];
 const MAX_TENTATIVAS = ESPERA_MIN.length + 1;
@@ -32,8 +33,9 @@ export async function enfileirar(fechamentoId: number) {
   await sql`
     INSERT INTO envios_email (fechamento_id, investidor_id, status, erro)
     SELECT r.fechamento_id, r.investidor_id,
-      CASE WHEN i.ativo AND i.relatorio_email THEN 'pendente' ELSE 'cancelado' END,
-      CASE WHEN NOT i.ativo THEN 'Investidor inativo' WHEN NOT i.relatorio_email THEN 'Investidor desligou o e-mail' ELSE '' END
+      CASE WHEN i.ativo AND i.relatorio_email AND i.email NOT LIKE ${"%" + EMAIL_DEMO} THEN 'pendente' ELSE 'cancelado' END,
+      CASE WHEN i.email LIKE ${"%" + EMAIL_DEMO} THEN 'Investidor de demonstração' WHEN NOT i.ativo THEN 'Investidor inativo'
+        WHEN NOT i.relatorio_email THEN 'Investidor desligou o e-mail' ELSE '' END
     FROM rateios r JOIN investidores i ON i.id = r.investidor_id
     WHERE r.fechamento_id = ${fechamentoId}
     ON CONFLICT (fechamento_id, investidor_id) DO UPDATE
@@ -49,7 +51,7 @@ export async function reenviar(fechamentoId: number, investidorId?: number) {
   await sql`
     UPDATE envios_email e SET status = 'pendente', erro = '', tentativas = 0, proxima_em = now()
     FROM investidores i
-    WHERE i.id = e.investidor_id AND i.ativo AND e.fechamento_id = ${fechamentoId}
+    WHERE i.id = e.investidor_id AND i.ativo AND i.email NOT LIKE ${"%" + EMAIL_DEMO} AND e.fechamento_id = ${fechamentoId}
       ${investidorId ? sql`AND e.investidor_id = ${investidorId}` : sql`AND e.status IN ('falhou', 'simulado')`}`;
 }
 

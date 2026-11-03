@@ -6,6 +6,7 @@ import { iniciais } from "@/lib/format";
 import { Shell } from "@/components/Shell";
 import { Agente } from "@/components/Agente";
 import { getSettings } from "@/lib/settings";
+import { demoAtiva } from "@/lib/demo";
 
 async function sair() {
   "use server";
@@ -19,7 +20,7 @@ export default async function PainelLayout({ children }: { children: React.React
   const u = await requireUser();
   const avisos = await avisosDe(u);
   return (
-    <Shell usuario={{ nome: u.nome, iniciais: iniciais(u.nome), perfil: u.perfil, perfilNome: PERFIL_NOME[u.perfil] }} avisos={avisos} sair={sair}>
+    <Shell usuario={{ nome: u.nome, iniciais: iniciais(u.nome), perfil: u.perfil, perfilNome: PERFIL_NOME[u.perfil] }} avisos={avisos} sair={sair} demo={await demoAtiva()}>
       {children}
       {(await getSettings()).agente && <Agente onde="painel" />}
     </Shell>

@@ -8,6 +8,11 @@ export type Anexo = { nome: string; conteudo: Buffer };
 export const emailConfigurado = () => !!process.env.RESEND_API_KEY?.trim();
 
 export async function enviarEmail(para: string, assunto: string, texto: string, anexos: Anexo[] = []): Promise<boolean> {
+  // Endereço .invalid (investidores da demonstração) nunca sai: evita devolução no provedor.
+  if (/\.invalid$/i.test(para)) {
+    console.log(`[email] não enviado: ${para} é de demonstração`);
+    return false;
+  }
   const chave = process.env.RESEND_API_KEY?.trim();
   const de = process.env.EMAIL_REMETENTE?.trim() || "HAV Energia <nao-responda@havenergia.com.br>";
   if (!chave) {

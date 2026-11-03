@@ -205,6 +205,14 @@ CREATE TABLE IF NOT EXISTS envios_email (
   UNIQUE (fechamento_id, investidor_id)
 );
 CREATE INDEX IF NOT EXISTS envios_fila_idx ON envios_email (status, proxima_em);
+
+-- Dados de demonstração (botão em Visão geral e Configurações): o que foi criado
+-- para apresentar fica anotado aqui, para remover só isso (lib/demo.ts).
+CREATE TABLE IF NOT EXISTS demo_registros (
+  tabela TEXT NOT NULL,
+  id BIGINT NOT NULL,
+  PRIMARY KEY (tabela, id)
+);
 `;
 
 let pronto: Promise<void> | null = null;

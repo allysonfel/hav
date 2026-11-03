@@ -39,11 +39,12 @@ const TITULOS: [RegExp, string, string][] = [
   [/^\/painel\/conta/, "Minha conta", "Perfil e senha"],
 ];
 
-export function Shell({ children, usuario, avisos, sair }: {
+export function Shell({ children, usuario, avisos, sair, demo = false }: {
   children: React.ReactNode;
   usuario: { nome: string; iniciais: string; perfil: Perfil; perfilNome: string };
   avisos: { texto: string; href: string }[];
   sair: () => Promise<void>;
+  demo?: boolean;
 }) {
   const path = usePathname();
   const [menu, setMenu] = useState(false);
@@ -89,6 +90,7 @@ export function Shell({ children, usuario, avisos, sair }: {
           </Link>
           <div className="titulo"><h2>{titulo}</h2><div className="sub">{sub}</div></div>
           <div className="a-top-actions">
+            {demo && <Link className="selo-demo" href="/painel/configuracoes#demonstracao" title="Dados de demonstração ativos">Demonstração</Link>}
             <details className="sino" key={path}>
               <summary className="bell-btn" aria-label="Avisos">
                 <Ic n="sino" />

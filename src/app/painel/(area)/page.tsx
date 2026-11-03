@@ -5,11 +5,14 @@ import { listarUsinas, local, serieMensal } from "@/lib/usinas";
 import { brl0, kwh, kwp, mesAno, mesAbrev, num, pct } from "@/lib/format";
 import { Historico, Kpi, PillUsina, Progresso } from "@/components/basicos";
 import { historicoUsinas } from "@/lib/historico";
+import { demoAtiva } from "@/lib/demo";
+import { alternarDemo } from "./configuracoes/acoes";
 
-export default async function VisaoGeral({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
+export default async function VisaoGeral({ searchParams }: { searchParams: Promise<{ erro?: string; demo?: string; demo_erro?: string }> }) {
   const u = await requireUser();
-  const { erro } = await searchParams;
+  const { erro, demo: demoMsg, demo_erro } = await searchParams;
   const admin = eAdmin(u);
+  const demo = admin && (await demoAtiva());
   const usinas = await listarUsinas();
   const serie = await serieMensal(null);
   const hist = await historicoUsinas(null, 12);
@@ -36,6 +39,19 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Promi
   return (
     <>
       {erro === "permissao" && <div className="aviso erro">Seu perfil não tem acesso a essa área.</div>}
+      {admin && (
+        <div className="demo-barra">
+          <form action={alternarDemo}>
+            <input type="hidden" name="acao" value={demo ? "desligar" : "ligar"} />
+            <input type="hidden" name="de" value="/painel" />
+            <button className={`toggle${demo ? " on" : ""}`} role="switch" aria-checked={demo} title={demo ? "Remover os dados de demonstração" : "Preencher o sistema com dados fictícios para apresentar"}>
+              <i /> Dados de demonstração
+            </button>
+          </form>
+        </div>
+      )}
+      {demoMsg && <div className="aviso ok">{demoMsg === "ligada" ? "Dados de demonstração carregados." : "Dados de demonstração removidos."}</div>}
+      {demo_erro && <div className="aviso erro">{demo_erro}</div>}
       <div className="kpi-row">
         <Kpi label="Usinas ativas" valor={num(operando.length)} delta={captacao.length ? `${captacao.length} em captação` : undefined} neutro />
         <Kpi label="Capacidade instalada" valor={kwp(capacidade)} delta={capCaptacao ? `+${kwp(capCaptacao)} em captação` : undefined} neutro />
