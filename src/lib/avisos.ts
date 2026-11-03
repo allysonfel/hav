@@ -41,5 +41,13 @@ export async function avisosDe(u: Usuario): Promise<Aviso[]> {
 
   const [{ n: repasses }] = await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM rateios WHERE repasse_status = 'pendente'`;
   if (repasses) avisos.push({ texto: `${repasses} repasse(s) pendente(s)`, href: "/painel/relatorios?repasse=pendente" });
+
+  // O serviço de backup (pasta backup/) grava "backup.ok" no audit_log a cada execução.
+  // Só monitora onde o backup está ligado (BACKUP_MONITORAR=sim).
+  if (process.env.BACKUP_MONITORAR === "sim") {
+    const [b] = await sql<{ atrasado: boolean }[]>`
+      SELECT coalesce(max(criado_em) < now() - interval '36 hours', true) AS atrasado FROM audit_log WHERE acao = 'backup.ok'`;
+    if (b.atrasado) avisos.push({ texto: "Backup atrasado: nenhum backup nas últimas 36 h. Avise a Logos.", href: "/painel" });
+  }
   return avisos;
 }
