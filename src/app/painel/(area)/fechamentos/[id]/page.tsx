@@ -5,7 +5,9 @@ import { sql } from "@/lib/db";
 import { brl, kwh, dataBr, mesLongo, pct } from "@/lib/format";
 import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
 import { Kpi, Retorno } from "@/components/basicos";
-import { fecharMes, marcarRepasse, reabrirMes } from "../../usinas/acoes";
+import { fecharMes, marcarRepasse, reabrirMes, reenviarEmail } from "../../usinas/acoes";
+import { STATUS_ENVIO, enviosDoFechamento } from "@/lib/envios";
+import { getSettings } from "@/lib/settings";
 
 const ERROS: Record<string, string> = {
   cotas: "As cotas desta usina não somam 100%. Ajuste os cotistas antes de fechar.",
@@ -18,6 +20,7 @@ const OK: Record<string, string> = {
   fechado: "Mês fechado. O rateio foi gravado.",
   reaberto: "Mês reaberto para correção.",
   repasse: "Repasse atualizado.",
+  reenvio: "E-mail colocado na fila de novo.",
 };
 
 export default async function Fechamento({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string }> }) {
@@ -53,6 +56,10 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
       .sort((a, b) => b.cota_ppm - a.cota_ppm);
   }
   const pendentes = linhas.filter((l) => l.repasse_status === "pendente").length;
+  const envios = fechado ? new Map((await enviosDoFechamento(id)).map((e) => [e.investidor_id, e])) : new Map();
+  const s = await getSettings();
+  const comEmail = fechado && envios.size > 0;
+  const falhas = [...envios.values()].filter((e) => e.status === "falhou" || e.status === "simulado").length;
   const soma = somaPpm(linhas);
 
   return (
@@ -69,6 +76,7 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
         </div>
         <div className="linha">
           {!fechado && <Link className="btn btn-ghost" href={`/painel/usinas/${f.usina_id}/lancar?comp=${f.comp}`}>Corrigir lançamento</Link>}
+          {fechado && <a className="btn btn-ghost" href={`/painel/fechamentos/${id}/pdf`}>Baixar PDF</a>}
           {fechado && <a className="btn btn-ghost" href={`/painel/fechamentos/${id}/exportar`}>Baixar planilha</a>}
           {fechado && admin && <form action={reabrirMes}><input type="hidden" name="id" value={id} /><button className="btn btn-ghost">Reabrir mês</button></form>}
           {!fechado && admin && <form action={fecharMes}><input type="hidden" name="id" value={id} /><button className="btn btn-gold">Fechar mês</button></form>}
@@ -97,7 +105,7 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
         </div>
         <div className="tbl-wrap">
           <table className="dt">
-            <thead><tr><th>Investidor</th><th>Cota</th><th>Geração proporcional</th><th>Receita</th>{fechado && <th>Repasse</th>}{fechado && admin && <th></th>}</tr></thead>
+            <thead><tr><th>Investidor</th><th>Cota</th><th>Geração proporcional</th><th>Receita</th>{fechado && <th>Repasse</th>}{comEmail && <th>Relatório por e-mail</th>}{fechado && <th></th>}</tr></thead>
             <tbody>
               {linhas.length === 0 && <tr><td colSpan={6} className="vazio">Esta usina ainda não tem cotistas.</td></tr>}
               {linhas.map((l) => (
@@ -107,15 +115,24 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
                   <td className="num">{kwh(l.geracao_wh)}</td>
                   <td className="num">{brl(l.receita_centavos)}</td>
                   {fechado && <td>{l.repasse_status === "pago" ? <span className="pill pill-ok">Pago{l.pago_em ? ` em ${dataBr(l.pago_em)}` : ""}</span> : <span className="pill pill-warn">Pendente</span>}</td>}
-                  {fechado && admin && (
-                    <td className="acoes">
-                      <form action={marcarRepasse}>
+                  {comEmail && <td><EnvioPill e={envios.get(l.investidor_id)} /></td>}
+                  {fechado && (
+                    <td className="acoes"><div className="linha">
+                      <a className="btn btn-ghost btn-sm" href={`/painel/fechamentos/${id}/pdf?investidor=${l.investidor_id}`} title="Relatório do investidor em PDF">PDF</a>
+                      {admin && comEmail && envios.get(l.investidor_id) && (
+                        <form action={reenviarEmail}>
+                          <input type="hidden" name="fechamento" value={id} />
+                          <input type="hidden" name="investidor" value={l.investidor_id} />
+                          <button className="btn btn-ghost btn-sm">Reenviar</button>
+                        </form>
+                      )}
+                      {admin && <form action={marcarRepasse}>
                         <input type="hidden" name="fechamento" value={id} />
                         <input type="hidden" name="rateio" value={l.id} />
                         <input type="hidden" name="pago" value={l.repasse_status === "pago" ? "0" : "1"} />
                         <button className="btn btn-ghost btn-sm">{l.repasse_status === "pago" ? "Desfazer" : "Marcar pago"}</button>
-                      </form>
-                    </td>
+                      </form>}
+                    </div></td>
                   )}
                 </tr>
               ))}
@@ -123,6 +140,28 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
           </table>
         </div>
       </div>
+
+      {fechado && (
+        <div className="card card-p">
+          <div className="section-head" style={{ marginBottom: 6 }}>
+            <h3>Relatório por e-mail</h3>
+            {admin && falhas > 0 && (
+              <form action={reenviarEmail}><input type="hidden" name="fechamento" value={id} /><button className="btn btn-primary btn-sm">Reenviar os que não saíram ({falhas})</button></form>
+            )}
+          </div>
+          <p className="muted sm" style={{ margin: 0 }}>
+            {!comEmail
+              ? s.emailRelatorio ? "Este mês foi fechado antes do envio automático existir. Reabra e feche de novo para enviar." : "O envio automático está desligado em Configurações."
+              : `Ao fechar o mês, cada cotista recebe o próprio relatório em PDF no e-mail cadastrado. Quem desligou o e-mail no app não recebe. ${[...envios.values()].filter((e) => e.status === "enviado").length} de ${envios.size} enviados.`}
+          </p>
+        </div>
+      )}
     </>
   );
+}
+
+function EnvioPill({ e }: { e?: { status: keyof typeof STATUS_ENVIO; erro: string; enviado_em: Date | null } }) {
+  if (!e) return <span className="muted">—</span>;
+  const c = e.status === "enviado" ? "pill-ok" : e.status === "falhou" ? "pill-danger" : e.status === "simulado" || e.status === "cancelado" ? "pill-muted" : "pill-warn";
+  return <span className={`pill ${c}`} title={e.erro || undefined}>{STATUS_ENVIO[e.status]}{e.status === "enviado" && e.enviado_em ? ` em ${dataBr(e.enviado_em)}` : ""}</span>;
 }

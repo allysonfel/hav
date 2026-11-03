@@ -31,7 +31,10 @@ export default async function Relatorios({ searchParams }: { searchParams: Promi
                 <span>{kwh(r.geracao_wh)} · {brl(r.receita_centavos)} · emitido em {dataBr(r.fechado_em).slice(0, 5)}</span>
                 <span className={r.repasse_status === "pago" ? "ok-txt" : "warn-txt"}>{r.repasse_status === "pago" ? "Repasse pago" : "Repasse pendente"}</span>
               </div>
-              <a className="btn btn-ghost btn-sm" href={`/relatorios/${r.fechamento_id}/exportar`}>Baixar</a>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <a className="btn btn-gold btn-sm" href={`/relatorios/${r.fechamento_id}/pdf`}>PDF</a>
+                <a className="btn btn-ghost btn-sm" href={`/relatorios/${r.fechamento_id}/exportar`} title="Planilha (CSV)">Planilha</a>
+              </div>
             </div>
           ))}
         </div>

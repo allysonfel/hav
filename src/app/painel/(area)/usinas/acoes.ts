@@ -3,6 +3,8 @@
 // Usinas, cotistas, lançamento do mês e fechamento. Cadastro, cotas, fechar e
 // repasses são só do admin; operador lança a geração como rascunho.
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { cancelarPendentes, enfileirar, processarFila, reenviar } from "@/lib/envios";
 import { sql } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { audit } from "@/lib/audit";
@@ -165,6 +167,9 @@ export async function fecharMes(fd: FormData) {
     INSERT INTO avisos_investidor (investidor_id, titulo, texto, href)
     SELECT investidor_id, ${`Relatório de ${mesLongo(f.comp)}`}, ${`${f.usina}: sua receita do mês já está disponível.`}, '/relatorios'
     FROM rateios WHERE fechamento_id = ${id}`;
+  // Relatório por e-mail: entra na fila agora e sai depois da resposta.
+  await enfileirar(id);
+  after(() => processarFila());
   redirect(`${volta}?ok=fechado`);
 }
 
@@ -185,6 +190,7 @@ export async function reabrirMes(fd: FormData) {
   });
   if (erro) redirect(`${volta}?erro=${erro}`);
   await audit(`usuario:${u.id}`, "mes_reaberto", "fechamento", id);
+  await cancelarPendentes(id);
   redirect(`${volta}?ok=reaberto`);
 }
 
@@ -211,4 +217,15 @@ export async function marcarRepasse(fd: FormData) {
       SELECT unnest(${ids}::int[]), ${`Repasse de ${mesLongo(f.comp)}`}, ${`${f.usina}: repasse registrado como pago.`}, '/relatorios'`;
   }
   redirect(`/painel/fechamentos/${fechamento}?ok=repasse`);
+}
+
+export async function reenviarEmail(fd: FormData) {
+  const u = await requireUser(["admin"]);
+  const id = idDe(fd.get("fechamento"));
+  const inv = idDe(fd.get("investidor"));
+  if (!id) redirect("/painel/relatorios");
+  await reenviar(id, inv || undefined);
+  await audit(`usuario:${u.id}`, "email_reenviado", "fechamento", id, inv ? `investidor ${inv}` : "falhas");
+  after(() => processarFila());
+  redirect(`/painel/fechamentos/${id}?ok=reenvio`);
 }

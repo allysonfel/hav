@@ -27,3 +27,38 @@ test("não perde precisão em valores altos", () => {
 test("mês sem receita dá zero para todos", () => {
   assert.deepEqual(dividir(0, [500000, 500000]), [0, 0]);
 });
+
+import { projetar, somarProjecoes } from "../src/lib/projecao.ts";
+
+const meses = (inicio: string, valores: number[]) => valores.map((valor, i) => {
+  const t = Number(inicio.slice(0, 4)) * 12 + Number(inicio.slice(5, 7)) - 1 + i;
+  return { comp: `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, "0")}`, valor };
+});
+
+test("projeção: menos de 3 meses não projeta", () => {
+  assert.deepEqual(projetar(meses("2026-08", [10, 20])), []);
+});
+
+test("projeção: sem ano anterior usa a média dos 3 últimos", () => {
+  const p = projetar(meses("2026-06", [100, 200, 300, 400]));
+  assert.deepEqual(p.map((x) => [x.comp, x.valor, x.metodo]), [["2026-10", 300, "media"], ["2026-11", 300, "media"], ["2026-12", 300, "media"]]);
+});
+
+test("projeção: com ano anterior segue a sazonalidade e a tendência (limitada a 20%)", () => {
+  // 2025: 12 meses de 100, menos novembro (150). 2026 até outubro: 110 (tendência +10%).
+  const v2025 = Array.from({ length: 12 }, (_, i) => (i === 10 ? 150 : 100));
+  const p = projetar([...meses("2025-01", v2025), ...meses("2026-01", Array(10).fill(110))]);
+  assert.deepEqual(p.map((x) => [x.comp, x.valor, x.metodo]), [["2026-11", 165, "sazonal"], ["2026-12", 110, "sazonal"], ["2027-01", 121, "sazonal"]]);
+  const alto = projetar([...meses("2025-01", Array(12).fill(100)), ...meses("2026-01", Array(10).fill(300))]);
+  assert.equal(alto[0].valor, 120);
+});
+
+test("projeção: buraco nos 3 últimos meses não projeta", () => {
+  assert.deepEqual(projetar([...meses("2026-05", [1, 2, 3]), ...meses("2026-09", [4])]), []);
+});
+
+test("soma de projeções por mês", () => {
+  const a = projetar(meses("2026-06", [100, 100, 100]));
+  const b = projetar(meses("2026-06", [50, 50, 50]));
+  assert.deepEqual(somarProjecoes([a, b]).map((x) => x.valor), [150, 150, 150]);
+});

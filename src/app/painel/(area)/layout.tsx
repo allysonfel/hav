@@ -4,6 +4,8 @@ import { audit } from "@/lib/audit";
 import { avisosDe } from "@/lib/avisos";
 import { iniciais } from "@/lib/format";
 import { Shell } from "@/components/Shell";
+import { Agente } from "@/components/Agente";
+import { getSettings } from "@/lib/settings";
 
 async function sair() {
   "use server";
@@ -19,6 +21,7 @@ export default async function PainelLayout({ children }: { children: React.React
   return (
     <Shell usuario={{ nome: u.nome, iniciais: iniciais(u.nome), perfil: u.perfil, perfilNome: PERFIL_NOME[u.perfil] }} avisos={avisos} sair={sair}>
       {children}
+      {(await getSettings()).agente && <Agente onde="painel" />}
     </Shell>
   );
 }

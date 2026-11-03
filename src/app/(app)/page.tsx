@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { requireInvestidor } from "@/lib/investidor";
 import { minhaSerie, minhasUsinas } from "@/lib/app";
-import { brl, kwh, mesAbrev, mesLongo, pct } from "@/lib/format";
+import { brl, kwh, mesLongo, pct } from "@/lib/format";
 import { local } from "@/lib/usinas";
+import { historicoInvestidor } from "@/lib/historico";
+import { getSettings } from "@/lib/settings";
+import { Historico } from "@/components/basicos";
 
 export default async function Inicio() {
   const i = await requireInvestidor();
   const usinas = await minhasUsinas(i.id);
   const serie = await minhaSerie(i.id);
   const atual = serie[serie.length - 1];
-  const max = Math.max(...serie.map((s) => s.receita_centavos), 1);
+  const cfg = await getSettings();
+  const hist = await historicoInvestidor(i.id, 12, cfg.projecaoApp ? 3 : 0);
   const ativas = usinas.filter((u) => u.status !== "captacao").length;
   const primeiro = i.nome.split(" ")[0];
 
@@ -34,16 +38,10 @@ export default async function Inicio() {
         <div className="card card-p vazio" style={{ marginBottom: 16 }}>Sua receita aparece aqui quando o primeiro mês for fechado.</div>
       )}
 
-      {serie.length > 1 && (
-        <div className="card" style={{ padding: 16, marginBottom: 14 }}>
-          <h4 style={{ margin: "0 0 2px", fontSize: 13.5 }}>Sua receita nos últimos meses</h4>
-          <div className="muted" style={{ fontSize: 11.5, marginBottom: 4 }}>Soma das suas usinas</div>
-          <div className="inv-sparkline" role="img" aria-label={serie.map((s) => `${mesAbrev(s.comp)}: ${brl(s.receita_centavos)}`).join(", ")}>
-            {serie.map((s, n) => (
-              <div key={s.comp} className={`bar${n === serie.length - 1 ? " now" : ""}`} style={{ height: Math.max(4, (s.receita_centavos / max) * 90) }} title={brl(s.receita_centavos)} />
-            ))}
-          </div>
-          <div className="inv-meses">{serie.map((s) => <span key={s.comp}>{mesAbrev(s.comp)}</span>)}</div>
+      {hist.real.length > 1 && (
+        <div style={{ marginBottom: 14 }}>
+          <Historico titulo="Sua receita mês a mês" sub="Soma das suas usinas · últimos 12 meses fechados" dados={hist.real.map((m) => ({ comp: m.comp, valor: m.receita_centavos }))} projecao={hist.projReceita} tipo="brl" largura={340}
+            aviso="Estimativa simples pelo histórico das usinas. Não é promessa de rendimento: a geração depende do sol, da operação e da tarifa." />
         </div>
       )}
 

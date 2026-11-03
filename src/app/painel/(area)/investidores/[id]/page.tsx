@@ -17,8 +17,8 @@ export default async function Investidor({ params, searchParams }: { params: Pro
   const id = Number((await params).id);
   const { ok, acesso } = await searchParams;
   if (!Number.isInteger(id) || id < 1) notFound();
-  const [i] = await sql<{ id: number; nome: string; email: string; celular: string; documento_cifrado: string | null; documento_final: string; pix_cifrado: string | null; ativo: boolean; ultimo_acesso: Date | null }[]>`
-    SELECT id, nome, email, celular, documento_cifrado, documento_final, pix_cifrado, ativo, ultimo_acesso FROM investidores WHERE id = ${id}`;
+  const [i] = await sql<{ id: number; nome: string; email: string; celular: string; documento_cifrado: string | null; documento_final: string; pix_cifrado: string | null; ativo: boolean; ultimo_acesso: Date | null; relatorio_email: boolean }[]>`
+    SELECT id, nome, email, celular, documento_cifrado, documento_final, pix_cifrado, ativo, ultimo_acesso, relatorio_email FROM investidores WHERE id = ${id}`;
   if (!i) notFound();
 
   const cotas = await sql<{ usina_id: number; usina: string; status: string; cota_ppm: number; valor_centavos: number }[]>`
@@ -78,6 +78,7 @@ export default async function Investidor({ params, searchParams }: { params: Pro
           <div><span>CPF/CNPJ</span><b className="num">{documento}</b></div>
           {admin && <div><span>Chave Pix</span><b>{decifrar(i.pix_cifrado) || "—"}</b></div>}
           <div><span>Último acesso ao app</span><b>{i.ultimo_acesso ? haQuanto(i.ultimo_acesso) : "nunca"}</b></div>
+          <div><span>Relatório por e-mail</span><b>{i.relatorio_email ? "Recebe" : "Desligou no app"}</b></div>
         </div>
       </div>
 
@@ -113,9 +114,9 @@ export default async function Investidor({ params, searchParams }: { params: Pro
         </div>
         <div className="tbl-wrap">
           <table className="dt">
-            <thead><tr><th>Mês</th><th>Usina</th><th>Cota</th><th>Geração</th><th>Receita</th><th>Repasse</th></tr></thead>
+            <thead><tr><th>Mês</th><th>Usina</th><th>Cota</th><th>Geração</th><th>Receita</th><th>Repasse</th><th></th></tr></thead>
             <tbody>
-              {rateios.length === 0 && <tr><td colSpan={6} className="vazio">Nenhum mês fechado ainda.</td></tr>}
+              {rateios.length === 0 && <tr><td colSpan={7} className="vazio">Nenhum mês fechado ainda.</td></tr>}
               {rateios.map((r) => (
                 <tr key={r.fechamento_id}>
                   <td><Link className="row-name" href={`/painel/fechamentos/${r.fechamento_id}`}>{mesAno(r.comp)}</Link></td>
@@ -124,6 +125,7 @@ export default async function Investidor({ params, searchParams }: { params: Pro
                   <td className="num">{kwh(r.geracao_wh)}</td>
                   <td className="num">{brl(r.receita_centavos)}</td>
                   <td>{r.repasse_status === "pago" ? <span className="pill pill-ok">Pago{r.pago_em ? ` em ${dataBr(r.pago_em)}` : ""}</span> : <span className="pill pill-warn">Pendente</span>}</td>
+                  <td className="acoes"><a className="btn btn-ghost btn-sm" href={`/painel/fechamentos/${r.fechamento_id}/pdf?investidor=${i.id}`}>PDF</a></td>
                 </tr>
               ))}
             </tbody>

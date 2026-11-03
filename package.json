@@ -14,6 +14,7 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@react-pdf/renderer": "4.9.0",
     "next": "16.4.1",
     "postgres": "^3.4.9",
     "react": "19.2.9",

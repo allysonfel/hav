@@ -186,6 +186,25 @@ CREATE TABLE IF NOT EXISTS interesses (
 -- Um pedido em aberto por investidor em cada usina.
 CREATE UNIQUE INDEX IF NOT EXISTS interesses_aberto_idx ON interesses (usina_id, investidor_id)
   WHERE investidor_id IS NOT NULL AND status IN ('aguardando', 'negociacao');
+
+-- Fase 3 (Plus). Investidor pode desligar o relatório mensal por e-mail.
+ALTER TABLE investidores ADD COLUMN IF NOT EXISTS relatorio_email BOOLEAN NOT NULL DEFAULT true;
+
+-- Fila do relatório mensal por e-mail: uma linha por investidor em cada mês
+-- fechado. Reabrir e fechar de novo volta a linha para pendente.
+CREATE TABLE IF NOT EXISTS envios_email (
+  id SERIAL PRIMARY KEY,
+  fechamento_id INT NOT NULL REFERENCES fechamentos(id),
+  investidor_id INT NOT NULL REFERENCES investidores(id),
+  status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'enviando', 'enviado', 'simulado', 'falhou', 'cancelado')),
+  tentativas INT NOT NULL DEFAULT 0,
+  erro TEXT NOT NULL DEFAULT '',
+  proxima_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+  enviado_em TIMESTAMPTZ,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (fechamento_id, investidor_id)
+);
+CREATE INDEX IF NOT EXISTS envios_fila_idx ON envios_email (status, proxima_em);
 `;
 
 let pronto: Promise<void> | null = null;

@@ -12,6 +12,13 @@ export type Settings = {
   suporteEmail: string;
   // Tela de oportunidades no app. Só ligar depois do parecer do advogado sobre a CVM.
   oportunidades: boolean;
+  // Plus: relatório mensal por e-mail ao fechar o mês (padrão ligado).
+  emailRelatorio: boolean;
+  // Plus: projeção dos próximos meses no app do investidor (padrão desligado,
+  // pelo mesmo cuidado da CVM: estimativa não pode parecer promessa de rendimento).
+  projecaoApp: boolean;
+  // Plus: agente de IA (painel e app). Padrão ligado; sem GROQ_API_KEY ele avisa que não está configurado.
+  agente: boolean;
 };
 
 export const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,24}$/i;
@@ -29,6 +36,9 @@ export async function getSettings(): Promise<Settings> {
     suporteWhatsapp: typeof d.suporteWhatsapp === "string" && /^\d{12,13}$/.test(d.suporteWhatsapp) ? d.suporteWhatsapp : "",
     suporteEmail: typeof d.suporteEmail === "string" && EMAIL.test(d.suporteEmail) ? d.suporteEmail : "",
     oportunidades: d.oportunidades === true,
+    emailRelatorio: d.emailRelatorio !== false,
+    projecaoApp: d.projecaoApp === true,
+    agente: d.agente !== false,
   };
 }
 

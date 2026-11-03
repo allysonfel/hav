@@ -4,6 +4,8 @@ import { EMAIL, getSettings, saveSettings } from "@/lib/settings";
 import { audit } from "@/lib/audit";
 import { cnpjFormatado, cnpjValido } from "@/lib/cpf";
 import { Retorno } from "@/components/basicos";
+import { emailConfigurado } from "@/lib/email";
+import { iaConfigurada } from "@/lib/ia";
 
 async function salvar(fd: FormData) {
   "use server";
@@ -21,8 +23,13 @@ async function salvar(fd: FormData) {
   if (suporteWhatsapp && !/^\d{12,13}$/.test(suporteWhatsapp)) redirect("/painel/configuracoes?erro=1");
   if (suporteEmail && !EMAIL.test(suporteEmail)) redirect("/painel/configuracoes?erro=1");
   const oportunidades = fd.get("oportunidades") === "1";
-  await saveSettings({ empresa, razaoSocial, cnpj, diaFechamento, suporteWhatsapp, suporteEmail, oportunidades });
-  await audit(`usuario:${u.id}`, "configuracoes_salvas", null, null, `oportunidades ${oportunidades ? "ligada" : "desligada"}`);
+  const emailRelatorio = fd.get("email_relatorio") === "1";
+  const projecaoApp = fd.get("projecao_app") === "1";
+  const agente = fd.get("agente") === "1";
+  await saveSettings({ empresa, razaoSocial, cnpj, diaFechamento, suporteWhatsapp, suporteEmail, oportunidades, emailRelatorio, projecaoApp, agente });
+  const lig = (b: boolean) => (b ? "ligada" : "desligada");
+  await audit(`usuario:${u.id}`, "configuracoes_salvas", null, null,
+    `oportunidades ${lig(oportunidades)}; email ${lig(emailRelatorio)}; projecao no app ${lig(projecaoApp)}; agente ${lig(agente)}`);
   redirect("/painel/configuracoes?ok=1");
 }
 
@@ -54,6 +61,23 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
           <b>Mostrar Oportunidades no app</b>
         </label>
         <p className="muted sm" style={{ margin: "0 0 14px" }}>Desligado, os investidores não veem usinas em captação nem o botão Quero investir. Ligue só depois da orientação do advogado sobre oferta de cotas.</p>
+        <label className="linha sm" style={{ marginBottom: 6, flexWrap: "nowrap" }}>
+          <input type="checkbox" name="projecao_app" value="1" defaultChecked={s.projecaoApp} />
+          <b>Mostrar a projeção dos próximos meses no app</b>
+        </label>
+        <p className="muted sm" style={{ margin: "0 0 14px" }}>No painel a projeção aparece sempre. No app, o investidor veria uma estimativa da própria receita: vale passar pelo advogado junto com Oportunidades, para não parecer promessa de rendimento.</p>
+
+        <div className="box-title">Plus</div>
+        <label className="linha sm" style={{ marginBottom: 6, flexWrap: "nowrap" }}>
+          <input type="checkbox" name="email_relatorio" value="1" defaultChecked={s.emailRelatorio} />
+          <b>Enviar o relatório mensal por e-mail ao fechar o mês</b>
+        </label>
+        <p className="muted sm" style={{ margin: "0 0 14px" }}>Cada cotista recebe o próprio relatório em PDF. O investidor pode desligar no app, em Perfil, Notificações.{emailConfigurado() ? "" : " Atenção: o envio de e-mail ainda não está configurado no servidor."}</p>
+        <label className="linha sm" style={{ marginBottom: 6, flexWrap: "nowrap" }}>
+          <input type="checkbox" name="agente" value="1" defaultChecked={s.agente} />
+          <b>Agente de IA no painel e no app</b>
+        </label>
+        <p className="muted sm" style={{ margin: "0 0 14px" }}>Responde dúvidas com os dados do sistema, respeitando o que cada perfil pode ver.{iaConfigurada() ? "" : " Atenção: a chave de IA ainda não está configurada no servidor."}</p>
         <div className="field"><label>Fuso horário</label><input value="América/Recife (UTC-3)" disabled readOnly /></div>
         <button className="btn btn-primary">Salvar alterações</button>
       </form>

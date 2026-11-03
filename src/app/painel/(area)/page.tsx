@@ -3,7 +3,8 @@ import { requireUser, eAdmin } from "@/lib/session";
 import { sql } from "@/lib/db";
 import { listarUsinas, local, serieMensal } from "@/lib/usinas";
 import { brl0, kwh, kwp, mesAno, mesAbrev, num, pct } from "@/lib/format";
-import { Barras, Kpi, PillUsina, Progresso } from "@/components/basicos";
+import { Historico, Kpi, PillUsina, Progresso } from "@/components/basicos";
+import { historicoUsinas } from "@/lib/historico";
 
 export default async function VisaoGeral({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const u = await requireUser();
@@ -11,6 +12,7 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Promi
   const admin = eAdmin(u);
   const usinas = await listarUsinas();
   const serie = await serieMensal(null);
+  const hist = await historicoUsinas(null, 12);
   const [{ investidores }] = await sql<{ investidores: number }[]>`
     SELECT count(DISTINCT c.investidor_id)::int AS investidores
     FROM cotas c JOIN usinas u ON u.id = c.usina_id JOIN investidores i ON i.id = c.investidor_id
@@ -44,7 +46,7 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Promi
       </div>
 
       <div className="two-col" style={admin && dest ? undefined : { gridTemplateColumns: "1fr" }}>
-        <Barras titulo="Geração mensal consolidada" sub="Todas as usinas · últimos 6 meses fechados · kWh" dados={serie.map((s) => ({ comp: s.comp, valor: s.geracao_wh }))} tipo="kwh" />
+        <Historico titulo="Geração mensal consolidada" sub="Todas as usinas · 12 meses fechados e projeção · kWh" dados={hist.real.map((s) => ({ comp: s.comp, valor: s.geracao_wh }))} projecao={hist.projGeracao} tipo="kwh" />
         {admin && dest && (
           <div className="card card-p">
             <h4 style={{ margin: "0 0 2px", fontSize: 13.5 }}>Captação em andamento</h4>

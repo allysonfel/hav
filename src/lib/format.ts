@@ -121,3 +121,12 @@ export function respostaCsv(nome: string, cabecalho: string[], linhas: unknown[]
 export const csvDinheiro = (c: number) => (c / 100).toFixed(2).replace(".", ",");
 export const csvKwh = (wh: number) => (wh / 1000).toFixed(3).replace(".", ",");
 export const csvPct = (ppm: number) => (ppm / 10_000).toFixed(4).replace(".", ",");
+
+// Valores do comparativo entre usinas (servidor e navegador).
+export type Formato = "kwh" | "brl" | "prod" | "brlkwp";
+export function fmtMetrica(f: Formato, v: number, curto = false): string {
+  if (f === "kwh") return `${num(v / 1000)} kWh`;
+  if (f === "brl") return curto ? brlCurto(v) : brl0(v);
+  if (f === "prod") return `${num(v, 1)} kWh/kWp`;
+  return `R$ ${num(v / 100, 2)}/kWp`;
+}

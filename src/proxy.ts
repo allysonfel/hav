@@ -13,7 +13,8 @@ import { dentroDoLimite, ipDe } from "@/lib/limiteRequisicoes";
 const LIMITE_GERAL = 240;
 const LIMITES: [regra: RegExp, max: number][] = [
   [/^\/(painel\/entrar|entrar|criar-conta|recuperar|acesso)$/, 20],
-  [/\/exportar$/, 10],
+  [/\/(exportar|pdf)$/, 10],
+  [/^\/api\/agente\//, 20],
 ];
 
 const PUBLICAS_APP = ["/entrar", "/criar-conta", "/recuperar", "/acesso", "/privacidade", "/manifest.webmanifest"];

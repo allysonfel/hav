@@ -81,3 +81,12 @@ export async function quererInvestir(fd: FormData) {
   await audit(`investidor:${i.id}`, "interesse_enviado", "interesse", n.id);
   redirect("/oportunidades/enviado");
 }
+
+// Liga ou desliga o relatório mensal por e-mail do próprio investidor.
+export async function salvarEmailRelatorio(fd: FormData) {
+  const i = await requireInvestidor();
+  const ligado = fd.get("ligado") === "1";
+  await sql`UPDATE investidores SET relatorio_email = ${ligado} WHERE id = ${i.id}`;
+  await audit(`investidor:${i.id}`, "preferencia_email", "investidor", i.id, ligado ? "ligado" : "desligado");
+  redirect("/avisos?ok=email");
+}

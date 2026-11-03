@@ -1,5 +1,7 @@
 // Dados de demonstração com as usinas do protótipo: 2 operando, 1 em captação,
-// investidores, interessados e os últimos 6 meses fechados com rateio.
+// investidores, interessados e os últimos 24 meses fechados com rateio (os 6
+// últimos com os números do protótipo; os anteriores seguem a sazonalidade do sol
+// no sertão, com o ano anterior um pouco mais fraco, para a projeção ter base).
 // O mês anterior ao atual fica com repasses a marcar. Só roda se ainda não há
 // usinas. Rodar com o sistema já tendo subido uma vez (as tabelas nascem aí):
 //   DATABASE_URL=... node scripts/seed-demo.mjs
@@ -39,6 +41,10 @@ const COTAS = {
 // Proporção de cada mês em relação ao último (curvas do protótipo).
 const CURVA = { "Usina Horizonte Dourado": [100, 106, 114, 118, 115, 120], "Usina Vale do Sol": [96, 104, 111, 117, 113, 120] };
 const ULTIMO_KWH = { "Usina Horizonte Dourado": 142_300, "Usina Vale do Sol": 126_800 };
+
+// Peso de cada mês do ano (jan a dez): sol mais forte de setembro a janeiro.
+const SAZONAL = [112, 106, 101, 94, 88, 84, 87, 96, 108, 116, 118, 116];
+const mesDo = (iso) => Number(iso.slice(5, 7)) - 1;
 
 function dividir(total, ppms) {
   const t = BigInt(total);
@@ -90,8 +96,12 @@ await db.begin(async (tx) => {
     if (u.status !== "operando") continue;
 
     const ppms = cotas.map((c) => c.ppm);
-    for (let m = 6; m >= 1; m--) {
-      const kwh = Math.round(ULTIMO_KWH[u.nome] * (CURVA[u.nome][6 - m] / 120));
+    const operandoDesde = u.desde;
+    for (let m = 24; m >= 1; m--) {
+      if (mesMenos(m) < operandoDesde) continue;
+      const kwh = m <= 6
+        ? Math.round(ULTIMO_KWH[u.nome] * (CURVA[u.nome][6 - m] / 120))
+        : Math.round(ULTIMO_KWH[u.nome] * (SAZONAL[mesDo(mesMenos(m))] / SAZONAL[mesDo(mesMenos(1))]) * (m > 12 ? 0.94 : 0.98) * (1 + (((m * (u.nome.length + 3)) % 9) - 4) / 100) * (u.nome.includes("Vale") ? 0.97 : 1));
       const wh = kwh * 1000;
       const centavos = kwh * 50; // R$ 0,50 por kWh, como no protótipo
       const [f] = await tx`

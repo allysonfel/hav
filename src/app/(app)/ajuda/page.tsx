@@ -6,6 +6,9 @@ const FAQ: [string, string][] = [
   ["Quando vejo o mês novo?", "Depois que a equipe fechar o mês. Antes disso os números ainda podem mudar e não aparecem aqui."],
   ["O que quer dizer repasse pendente?", "O valor já foi calculado, mas o pagamento ainda não foi registrado pela equipe."],
   ["Onde informo minha chave Pix?", "Em Perfil, Dados bancários para repasse. A troca pede a sua senha."],
+  ["Como baixo o relatório em PDF?", "Em Relatórios, toque em PDF no mês que quiser. A planilha continua disponível ao lado."],
+  ["Recebo o relatório por e-mail?", "Sim, quando a equipe fecha o mês, o PDF chega no seu e-mail cadastrado. Para ligar ou desligar, vá em Perfil, Notificações."],
+  ["O que é o agente?", "É o botão dourado no canto da tela. Ele responde dúvidas sobre suas usinas, sua receita, seus repasses e o uso do app, com os seus dados. As respostas são geradas por IA: confira os valores nas telas."],
 ];
 
 export default async function Ajuda() {

@@ -5,7 +5,8 @@ import { sql } from "@/lib/db";
 import { local, serieMensal, type StatusUsina } from "@/lib/usinas";
 import { brl, brl0, kwh, kwp, mesAno, pct } from "@/lib/format";
 import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
-import { Barras, Kpi, PillUsina, Progresso, Retorno } from "@/components/basicos";
+import { Historico, Kpi, PillUsina, Progresso, Retorno } from "@/components/basicos";
+import { historicoUsinas, periodoDe } from "@/lib/historico";
 import { removerCota, salvarCota } from "../acoes";
 
 const ERROS: Record<string, string> = {
@@ -16,7 +17,7 @@ const ERROS: Record<string, string> = {
   excede: "Com essa cota, a usina passaria de 100%. Ajuste as outras primeiro.",
 };
 
-export default async function Usina({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string }> }) {
+export default async function Usina({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string; p?: string }> }) {
   const user = await requireUser();
   const admin = eAdmin(user);
   const id = Number((await params).id);
@@ -36,6 +37,8 @@ export default async function Usina({ params, searchParams }: { params: Promise<
         WHERE c.usina_id = ${id} AND c.ativa ORDER BY c.cota_ppm DESC, i.nome`
     : [];
   const serie = await serieMensal(id);
+  const periodo = periodoDe(sp.p);
+  const hist = await historicoUsinas(id, periodo, u.status === "operando" ? 3 : 0);
   const fechamentos = await sql<{ id: number; comp: string; geracao_wh: number; receita_centavos: number; status: string; pendentes: number }[]>`
     SELECT f.id, to_char(f.competencia, 'YYYY-MM') AS comp, f.geracao_wh, f.receita_centavos, f.status,
       (SELECT count(*)::int FROM rateios r WHERE r.fechamento_id = f.id AND r.repasse_status = 'pendente') AS pendentes
@@ -70,9 +73,15 @@ export default async function Usina({ params, searchParams }: { params: Promise<
           <Kpi label={atual ? `Geração (${mesAno(atual.comp)})` : "Geração"} valor={atual ? kwh(atual.geracao_wh) : "—"} />
           <Kpi label="Receita distribuída" valor={atual ? brl0(atual.receita_centavos) : "—"} />
         </div>
+        <div className="section-head" style={{ marginBottom: 10 }}>
+          <span className="hint">Histórico{hist.projGeracao.length ? " e projeção dos próximos 3 meses" : ""}</span>
+          <div className="seg-tabs">
+            {[12, 24].map((p) => <Link key={p} className={p === periodo ? "active" : ""} href={`/painel/usinas/${u.id}?p=${p}`} scroll={false}>{p} meses</Link>)}
+          </div>
+        </div>
         <div className="two-col igual" style={{ marginBottom: 0 }}>
-          <Barras titulo="Geração mensal" sub="kWh · últimos 6 meses fechados" dados={serie.map((s) => ({ comp: s.comp, valor: s.geracao_wh }))} tipo="kwh" />
-          <Barras titulo="Receita distribuída" sub="R$ · últimos 6 meses fechados" dados={serie.map((s) => ({ comp: s.comp, valor: s.receita_centavos }))} tipo="brl" />
+          <Historico titulo="Geração mensal" sub={`kWh · últimos ${periodo} meses fechados`} dados={hist.real.map((s) => ({ comp: s.comp, valor: s.geracao_wh }))} projecao={hist.projGeracao} tipo="kwh" />
+          <Historico titulo="Receita distribuída" sub={`R$ · últimos ${periodo} meses fechados`} dados={hist.real.map((s) => ({ comp: s.comp, valor: s.receita_centavos }))} projecao={hist.projReceita} tipo="brl" />
         </div>
       </div>
 
