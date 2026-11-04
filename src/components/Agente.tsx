@@ -4,6 +4,7 @@
 // num painel com cabeçalho azul. No painel fica no canto da tela; no app,
 // acima da barra de baixo. A conversa dura enquanto a aba está aberta.
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { Ic } from "./Ic";
 
@@ -26,15 +27,21 @@ const CONF = {
 
 let guardada: Record<string, Msg[]> = {};
 
+// Desenhado direto no <body> (portal): dentro do conteúdo, a animação de entrada
+// da página prendia o botão ao conteúdo em vez do canto da tela.
 export function Agente({ onde }: { onde: "painel" | "app" }) {
   const [aberto, setAberto] = useState(false);
-  return (
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
+  if (!montado) return null;
+  return createPortal(
     <>
       <button className={`ai-fab ai-fab-${onde}`} onClick={() => setAberto(!aberto)} aria-label={aberto ? "Fechar o agente" : "Abrir o agente de IA"} aria-expanded={aberto} title="Agente de IA HAV Energia">
         <Ic n={aberto ? "fechar" : "agente"} />
       </button>
       {aberto && <Painel onde={onde} fechar={() => setAberto(false)} />}
-    </>
+    </>,
+    document.body,
   );
 }
 
