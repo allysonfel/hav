@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#0f2742", width: "device-width", initialScale: 1 };
 
-// Tema escolhido no botão lua/sol fica no cookie; sem cookie, o CSS segue o tema do aparelho.
+// Tema escolhido no botão lua/sol fica no cookie; sem cookie, abre no claro (não segue o aparelho).
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const tema = (await cookies()).get("hav-tema")?.value;
   return (

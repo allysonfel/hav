@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { Ic } from "./Ic";
 
 // Alterna claro/escuro. A escolha vai para o cookie hav-tema, que o layout lê no
-// servidor (abre já no tema certo, sem piscar). Sem escolha, segue o aparelho.
+// servidor (abre já no tema certo, sem piscar). Sem escolha, fica no claro.
 export function TemaBotao() {
   const [tema, setTema] = useState<"light" | "dark" | null>(null);
   useEffect(() => {
     const t = document.documentElement.dataset.theme;
-    setTema(t === "dark" || t === "light" ? t : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    setTema(t === "dark" ? "dark" : "light");
   }, []);
   const trocar = () => {
     const novo = tema === "dark" ? "light" : "dark";

@@ -43,7 +43,7 @@
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, Helvetica, Arial, sans-serif;
 }
-/* Tema escuro: escolhido no botão lua/sol (cookie hav-tema, aplicado no servidor) ou, sem escolha, o do aparelho. */
+/* Tema escuro: só quando escolhido no botão lua/sol (cookie hav-tema, aplicado no servidor). Sempre começa claro. */
 :root[data-theme="dark"] {
   --bg: #0b1622;
   --surface: #12202f;
@@ -79,41 +79,6 @@
   --chart-kwh: #e6a23c;
   color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0b1622;
-  --surface: #12202f;
-  --border: #22344a;
-  --ink: #e7edf4;
-  --ink-muted: #9fb0c2;
-  --ink-faint: #74879b;
-  --success: #45c97f;
-  --success-bg: rgba(31,157,85,.18);
-  --danger: #ff7b7b;
-  --danger-bg: rgba(214,69,69,.18);
-  --warn-bg: rgba(240,169,58,.14);
-  --gold-dark: #f2b65c;
-  --side: #0a1826;
-  --accent-ink: #e7edf4;
-  --link: #8fbbe8;
-  --soft: #1a2b3e;
-  --field: #0e1a27;
-  --row-hover: #16263a;
-  --ok-ink: #7fdcaa;
-  --erro-ink: #ffa3a3;
-  --info-ink: #f2c27a;
-  --bot-ink: #f3d7a6;
-  --gold-line: rgba(240,169,58,.35);
-  --toggle-off: #33475d;
-  --danger-line: rgba(255,123,123,.35);
-  --sombra: rgba(0,0,0,.55);
-  --chart-grid: #1d2e42;
-  --chart-base: #2a3d53;
-  --chart-txt: #8597ab;
-  --chart-ink: #e7edf4;
-  --chart-money: #7fa6d4;
-  --chart-kwh: #e6a23c;
-  color-scheme: dark;
-} }
 /* Troca de tema suave (a classe fica só durante a troca). */
 html.trocando-tema, html.trocando-tema * { transition: background-color .25s ease, color .25s ease, border-color .25s ease !important; }
 * { box-sizing: border-box; min-width: 0; }
@@ -457,7 +422,6 @@ a.profile-row:active { opacity: .6; }
 .inv-top .tema-btn { width: 34px; height: 34px; }
 /* No escuro, o botão principal azul-marinho some no fundo: clareia um pouco. */
 :root[data-theme="dark"] .btn-primary, :root[data-theme="dark"] .ai-panel-input button { background: #23466f; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn-primary, :root:not([data-theme="light"]) .ai-panel-input button { background: #23466f; } }
 @media (max-width: 760px) {
   .mob-logo { white-space: nowrap; }
   .a-top-actions { gap: 6px; }
