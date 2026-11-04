@@ -45,7 +45,7 @@ export default async function Inicio() {
         </div>
       )}
 
-      <div className="section-head"><h3 style={{ fontSize: 14 }}>Minhas usinas</h3></div>
+      <div className="section-head"><h3>Minhas usinas</h3></div>
       {usinas.length === 0 && <div className="card card-p vazio">Nenhuma cota registrada ainda.</div>}
       {usinas.map((u) => (
         <Link key={u.usina_id} className="card mini-card" href="/usinas">

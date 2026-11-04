@@ -16,7 +16,7 @@ export default async function Oportunidades({ searchParams }: { searchParams: Pr
   return (
     <>
       <div className="hello">
-        <h2 style={{ fontSize: 17 }}>Oportunidades</h2>
+        <h2>Oportunidades</h2>
         <div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>Novas usinas e ampliação de cota</div>
       </div>
       {erro && <div className="aviso erro">{erro === "limite" ? "Muitos envios. Aguarde um minuto." : "Informe o valor de interesse."}</div>}
@@ -37,7 +37,7 @@ export default async function Oportunidades({ searchParams }: { searchParams: Pr
       })}
       {minhas.length > 0 && (
         <form action={quererInvestir} className="card" style={{ padding: 16, marginBottom: 14 }}>
-          <h4 style={{ margin: "0 0 4px", fontSize: 13.5 }}>Quer aumentar sua cota em uma usina atual?</h4>
+          <h4 style={{ margin: "0 0 4px" }}>Quer aumentar sua cota em uma usina atual?</h4>
           <p className="muted" style={{ margin: "0 0 12px", fontSize: 12.5 }}>Fale com a equipe HAV sobre ampliar sua participação.</p>
           <div className="field">
             <label htmlFor="usina">Usina</label>

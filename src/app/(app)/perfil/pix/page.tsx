@@ -12,7 +12,7 @@ export default async function Pix({ searchParams }: { searchParams: Promise<{ ok
   const [r] = await sql<{ pix_cifrado: string | null }[]>`SELECT pix_cifrado FROM investidores WHERE id = ${i.id}`;
   return (
     <>
-      <div className="hello"><Link className="link sm" href="/perfil">← Perfil</Link><h2 style={{ fontSize: 17 }}>Dados para repasse</h2></div>
+      <div className="hello"><Link className="link sm" href="/perfil">← Perfil</Link><h2>Dados para repasse</h2></div>
       {sp.ok && <div className="aviso ok">Chave Pix salva.</div>}
       {sp.erro && <div className="aviso erro">{ERROS[sp.erro] ?? "Confira os dados."}</div>}
       <form action={salvarPix} className="card card-p">

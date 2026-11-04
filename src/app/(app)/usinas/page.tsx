@@ -16,7 +16,7 @@ export default async function MinhasUsinas() {
   const comp = ids.length > 1 ? await comparativo(12, ids) : null;
   return (
     <>
-      <div className="hello"><h2 style={{ fontSize: 17 }}>Minhas usinas</h2></div>
+      <div className="hello"><h2>Minhas usinas</h2></div>
       {usinas.length === 0 && <div className="card card-p vazio">Nenhuma cota registrada ainda.</div>}
       {usinas.map((u) => (
         <div key={u.usina_id} className="card mini-card">

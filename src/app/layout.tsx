@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Manrope, Sora } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
+
+// Fontes do padrão Logos (as mesmas da Lavateria): Manrope no texto, Sora nos títulos e números.
+// O next/font baixa no build e serve do próprio site (cabe no font-src 'self').
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
+const sora = Sora({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-sora", display: "swap" });
 
 export const metadata: Metadata = {
   title: "HAV Energia",
@@ -15,7 +21,7 @@ export const viewport: Viewport = { themeColor: "#0f2742", width: "device-width"
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const tema = (await cookies()).get("hav-tema")?.value;
   return (
-    <html lang="pt-BR" data-theme={tema === "dark" || tema === "light" ? tema : undefined}>
+    <html lang="pt-BR" className={`${manrope.variable} ${sora.variable}`} data-theme={tema === "dark" || tema === "light" ? tema : undefined}>
       <body>{children}</body>
     </html>
   );

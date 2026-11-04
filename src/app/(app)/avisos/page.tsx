@@ -16,7 +16,7 @@ export default async function Avisos({ searchParams }: { searchParams: Promise<{
   await sql`UPDATE avisos_investidor SET lido_em = now() WHERE investidor_id = ${i.id} AND lido_em IS NULL`;
   return (
     <>
-      <div className="hello"><h2 style={{ fontSize: 17 }}>Avisos</h2></div>
+      <div className="hello"><h2>Avisos</h2></div>
       {ok === "email" && <div className="aviso ok">Preferência salva.</div>}
       {s.emailRelatorio && (
         <form action={salvarEmailRelatorio} className="card" style={{ padding: 16, marginBottom: 14 }}>

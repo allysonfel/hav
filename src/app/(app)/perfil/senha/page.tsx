@@ -10,7 +10,7 @@ export default async function Senha({ searchParams }: { searchParams: Promise<{ 
   const sp = await searchParams;
   return (
     <>
-      <div className="hello"><Link className="link sm" href="/perfil">← Perfil</Link><h2 style={{ fontSize: 17 }}>Segurança e senha</h2></div>
+      <div className="hello"><Link className="link sm" href="/perfil">← Perfil</Link><h2>Segurança e senha</h2></div>
       {sp.ok && <div className="aviso ok">Senha trocada. As outras sessões foram encerradas.</div>}
       {sp.erro && <div className="aviso erro">{ERROS[sp.erro] ?? "Confira os dados."}</div>}
       <form action={trocarSenha} className="card card-p">

@@ -42,7 +42,7 @@ export default async function Conta({ searchParams }: { searchParams: Promise<{ 
         mapaOk={{ perfil: "Perfil salvo.", senha: "Senha trocada. As outras sessões foram encerradas." }}
         mapaErro={{ nome: "Informe o nome.", atual: "Senha atual incorreta.", curta: `A nova senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.` }} />
       <form action={salvarPerfil} className="card card-p" style={{ marginBottom: 16 }}>
-        <h4 style={{ margin: "0 0 14px", fontSize: 14 }}>Perfil</h4>
+        <h4 style={{ margin: "0 0 14px" }}>Perfil</h4>
         <div className="form-grid">
           <div className="field"><label htmlFor="nome">Nome</label><input id="nome" name="nome" defaultValue={u.nome} required maxLength={80} /></div>
           <div className="field"><label htmlFor="email">E-mail</label><input id="email" value={u.email} disabled readOnly /></div>
@@ -52,7 +52,7 @@ export default async function Conta({ searchParams }: { searchParams: Promise<{ 
         <div className="linha"><button className="btn btn-primary">Salvar alterações</button><span className="muted sm">{PERFIL_NOME[u.perfil]}</span></div>
       </form>
       <form action={trocarSenha} className="card card-p">
-        <h4 style={{ margin: "0 0 14px", fontSize: 14 }}>Trocar senha</h4>
+        <h4 style={{ margin: "0 0 14px" }}>Trocar senha</h4>
         <div className="field"><label htmlFor="atual">Senha atual</label><input id="atual" name="atual" type="password" required maxLength={200} autoComplete="current-password" /></div>
         <div className="field"><label htmlFor="nova">Nova senha (mínimo {SENHA_MINIMA} caracteres)</label><input id="nova" name="nova" type="password" required minLength={SENHA_MINIMA} maxLength={200} autoComplete="new-password" /></div>
         <button className="btn btn-primary">Trocar senha</button>

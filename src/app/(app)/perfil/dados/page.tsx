@@ -10,7 +10,7 @@ export default async function Dados({ searchParams }: { searchParams: Promise<{ 
   const [r] = await sql<{ documento_final: string }[]>`SELECT documento_final FROM investidores WHERE id = ${i.id}`;
   return (
     <>
-      <div className="hello"><Link className="link sm" href="/perfil">← Perfil</Link><h2 style={{ fontSize: 17 }}>Dados pessoais</h2></div>
+      <div className="hello"><Link className="link sm" href="/perfil">← Perfil</Link><h2>Dados pessoais</h2></div>
       {sp.ok && <div className="aviso ok">Celular salvo.</div>}
       {sp.erro && <div className="aviso erro">Confira o celular, com DDD.</div>}
       <form action={salvarCelular} className="card card-p" style={{ marginBottom: 14 }}>

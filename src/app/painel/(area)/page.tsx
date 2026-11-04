@@ -65,7 +65,7 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Promi
         <Historico titulo="Geração mensal consolidada" sub="Todas as usinas · 12 meses fechados e projeção · kWh" dados={hist.real.map((s) => ({ comp: s.comp, valor: s.geracao_wh }))} projecao={hist.projGeracao} tipo="kwh" />
         {admin && dest && (
           <div className="card card-p">
-            <h4 style={{ margin: "0 0 2px", fontSize: 13.5 }}>Captação em andamento</h4>
+            <h4 style={{ margin: "0 0 2px" }}>Captação em andamento</h4>
             <div className="muted" style={{ fontSize: 11.5, marginBottom: 12 }}>{dest.nome}</div>
             <div className="big num">{brl0(dest.captado_centavos)}</div>
             <div className="muted" style={{ fontSize: 12, margin: "2px 0 10px" }}>de {brl0(dest.investimento_centavos)} · {pct(ppmDest)}</div>

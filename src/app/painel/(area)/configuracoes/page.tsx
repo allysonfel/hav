@@ -44,7 +44,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
     <>
       <Retorno ok={sp.ok} erro={sp.erro} mapaOk={{ "1": "Configurações salvas." }} mapaErro={{ "1": "Confira os dados (CNPJ, WhatsApp ou e-mail inválido)." }} />
       <form action={salvar} className="card card-p" style={{ maxWidth: 640 }}>
-        <h4 style={{ margin: "0 0 14px", fontSize: 14 }}>Sistema</h4>
+        <h4 style={{ margin: "0 0 14px" }}>Sistema</h4>
         <div className="field"><label htmlFor="empresa">Nome da empresa</label><input id="empresa" name="empresa" defaultValue={s.empresa} required maxLength={40} /></div>
         <div className="field"><label htmlFor="razao_social">Razão social</label><input id="razao_social" name="razao_social" defaultValue={s.razaoSocial} maxLength={100} /></div>
         <div className="field"><label htmlFor="cnpj">CNPJ</label><input id="cnpj" name="cnpj" defaultValue={s.cnpj ? cnpjFormatado(s.cnpj) : ""} maxLength={18} inputMode="numeric" placeholder="00.000.000/0000-00" /></div>
@@ -87,7 +87,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
 
       <div className="card card-p" style={{ maxWidth: 640, marginTop: 16 }} id="demonstracao">
         <div className="linha" style={{ justifyContent: "space-between", marginBottom: 8 }}>
-          <h4 style={{ margin: 0, fontSize: 14 }}>Dados de demonstração</h4>
+          <h4 style={{ margin: 0 }}>Dados de demonstração</h4>
           {demo ? <span className="pill pill-warn">Ativos</span> : <span className="pill pill-muted">Desligados</span>}
         </div>
         {sp.demo && <div className="aviso ok">{sp.demo === "ligada" ? "Dados de demonstração carregados." : "Dados de demonstração removidos."}</div>}

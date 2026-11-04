@@ -14,7 +14,7 @@ export default async function Relatorios({ searchParams }: { searchParams: Promi
   const lista = todos.filter((r) => r.usina_id === atual);
   return (
     <>
-      <div className="hello"><h2 style={{ fontSize: 17 }}>Relatórios</h2></div>
+      <div className="hello"><h2>Relatórios</h2></div>
       {usinas.length > 1 && (
         <div className="seg-tabs seg-rola" style={{ marginBottom: 14 }}>
           {usinas.map(([id, nome]) => <Link key={id} className={id === atual ? "active" : ""} href={`/relatorios?usina=${id}`}>{nomeCurtoUsina(nome)}</Link>)}

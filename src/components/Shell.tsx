@@ -2,21 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Ic, type IcNome } from "./Ic";
 import { TemaBotao } from "./TemaBotao";
 
 type Perfil = "admin" | "operador";
-type Item = { href: string; nome: string; ic: IcNome; so?: Perfil };
+type Item = { href: string; nome: string; ic: IcNome; so?: Perfil; grupo?: string };
 
 const NAV: Item[] = [
   { href: "/painel", nome: "Visão geral", ic: "geral" },
   { href: "/painel/usinas", nome: "Usinas", ic: "usinas" },
   { href: "/painel/investidores", nome: "Investidores", ic: "investidores" },
   { href: "/painel/captacao", nome: "Captação", ic: "captacao", so: "admin" },
-  { href: "/painel/comparativo", nome: "Comparativo", ic: "comparativo" },
+  { href: "/painel/comparativo", nome: "Comparativo", ic: "comparativo", grupo: "Análise" },
   { href: "/painel/relatorios", nome: "Relatórios", ic: "relatorios" },
-  { href: "/painel/equipe", nome: "Equipe", ic: "equipe", so: "admin" },
+  { href: "/painel/equipe", nome: "Equipe", ic: "equipe", so: "admin", grupo: "Gestão" },
   { href: "/painel/configuracoes", nome: "Configurações", ic: "config", so: "admin" },
 ];
 
@@ -67,10 +67,13 @@ export function Shell({ children, usuario, avisos, sair, demo = false }: {
         </Link>
         <nav className="a-nav">
           {NAV.filter((n) => !n.so || n.so === usuario.perfil).map((n) => (
-            <Link key={n.href} href={n.href} className={on(n.href) ? "active" : ""}>
-              <Ic n={n.ic} />
-              {n.nome}
-            </Link>
+            <Fragment key={n.href}>
+              {n.grupo && <div className="a-grupo">{n.grupo}</div>}
+              <Link href={n.href} className={on(n.href) ? "active" : ""}>
+                <Ic n={n.ic} />
+                {n.nome}
+              </Link>
+            </Fragment>
           ))}
         </nav>
         <div className="a-sidebar-foot">
@@ -89,7 +92,7 @@ export function Shell({ children, usuario, avisos, sair, demo = false }: {
             <img src="/icone-64.png" alt="" />
             HAV Energia
           </Link>
-          <div className="titulo"><h2>{titulo}</h2><div className="sub">{sub}</div></div>
+          <div className="titulo"><h2 title={sub}>{titulo}</h2></div>
           <div className="a-top-actions">
             {demo && <Link className="selo-demo" href="/painel/configuracoes#demonstracao" title="Dados de demonstração ativos">Demonstração</Link>}
             <TemaBotao />

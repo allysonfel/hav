@@ -34,25 +34,40 @@ export default async function Entrar({ searchParams }: { searchParams: Promise<{
   const { erro, esqueci } = await searchParams;
   return (
     <div className="login">
-      <form className="login-card" action={login}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="logo" src="/logo-hav.png" alt="HAV Energia" />
-        <h1>Painel HAV Energia</h1>
-        <p className="sub">Gestão de usinas, investidores e captação.</p>
-        {erro && <div className="aviso erro">{erro === "bloqueado" ? "Muitas tentativas. Aguarde 15 minutos." : "E-mail ou senha incorretos."}</div>}
-        {esqueci && <div className="aviso info">Peça ao administrador uma senha provisória. Ele gera em Equipe, no seu nome.</div>}
-        <div className="field">
-          <label htmlFor="email">E-mail</label>
-          <input id="email" type="email" name="email" required maxLength={160} autoComplete="username" />
+      <div className="login-marca">
+        <div className="login-logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icone-64.png" alt="" />
+          <div><b>HAV Energia</b><small>Painel interno</small></div>
         </div>
-        <div className="field">
-          <label htmlFor="senha">Senha</label>
-          <input id="senha" type="password" name="senha" required maxLength={200} autoComplete="current-password" />
+        <div className="login-chamada">
+          <h2>Usinas, investidores e captação num painel só.</h2>
+          <p>Lance a geração do mês, feche o rateio por cota e acompanhe os repasses de cada investidor.</p>
         </div>
-        <button className="btn btn-primary btn-block">Entrar</button>
-        <a className="login-link" href="/painel/entrar?esqueci=1">Esqueci minha senha</a>
-        <div className="login-foot"><span>HAV Energia</span><span>Ambiente interno</span></div>
-      </form>
+        <div className="login-pontos">
+          <div><b>Rateio</b><span>por cota, fechado no mês</span></div>
+          <div><b>Investidores</b><span>app com a receita de cada um</span></div>
+          <div><b>Captação</b><span>interessados de cada usina</span></div>
+        </div>
+      </div>
+      <div className="login-lado">
+        <form className="login-card" action={login}>
+          <h1>Entrar no painel</h1>
+          <p className="sub">Use o e-mail cadastrado pela administração da HAV.</p>
+          {erro && <div className="aviso erro">{erro === "bloqueado" ? "Muitas tentativas. Aguarde 15 minutos e tente de novo." : "E-mail ou senha incorretos."}</div>}
+          {esqueci && <div className="aviso info">Peça ao administrador uma senha provisória. Ele gera em Equipe, no seu nome.</div>}
+          <div className="field">
+            <label htmlFor="email">E-mail</label>
+            <input id="email" type="email" name="email" required maxLength={160} autoComplete="username" />
+          </div>
+          <div className="field">
+            <label htmlFor="senha">Senha</label>
+            <input id="senha" type="password" name="senha" required maxLength={200} autoComplete="current-password" />
+          </div>
+          <button className="btn btn-primary btn-block">Entrar</button>
+          <a className="login-link" href="/painel/entrar?esqueci=1">Esqueci minha senha</a>
+        </form>
+      </div>
     </div>
   );
 }
