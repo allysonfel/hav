@@ -92,7 +92,7 @@ export function Shell({ children, usuario, avisos, sair, demo = false }: {
             <img src="/icone-64.png" alt="" />
             HAV Energia
           </Link>
-          <div className="titulo"><h2 title={sub}>{titulo}</h2></div>
+          <div className="titulo"><h2>{titulo}</h2><div className="sub">{sub}</div></div>
           <div className="a-top-actions">
             {demo && <Link className="selo-demo" href="/painel/configuracoes#demonstracao" title="Dados de demonstração ativos">Demonstração</Link>}
             <TemaBotao />
