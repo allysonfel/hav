@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,9 +11,11 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#0f2742", width: "device-width", initialScale: 1 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// Tema escolhido no botão lua/sol fica no cookie; sem cookie, o CSS segue o tema do aparelho.
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const tema = (await cookies()).get("hav-tema")?.value;
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-theme={tema === "dark" || tema === "light" ? tema : undefined}>
       <body>{children}</body>
     </html>
   );

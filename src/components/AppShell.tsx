@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Ic, type IcNome } from "./Ic";
+import { TemaBotao } from "./TemaBotao";
 
 const TABS: { href: string; nome: string; ic: IcNome; so?: "oportunidades" }[] = [
   { href: "/", nome: "Início", ic: "inicio" },
@@ -23,10 +24,13 @@ export function AppShell({ children, naoLidos, oportunidades }: { children: Reac
           <img src="/icone-64.png" alt="" />
           <span>HAV Energia</span>
         </Link>
+        <div className="linha" style={{ gap: 8, flexWrap: "nowrap" }}>
+          <TemaBotao />
         <Link className="bell-btn" href="/avisos" aria-label={naoLidos ? `${naoLidos} avisos novos` : "Avisos"} style={{ width: 32, height: 32 }}>
           <Ic n="sino" />
           {naoLidos > 0 && <span className="bell-dot" />}
         </Link>
+        </div>
       </div>
       <div className="inv-scroll">{children}</div>
       <nav className="bottom-nav">

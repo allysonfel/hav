@@ -54,21 +54,21 @@ export function LinhasComparativo({ comps, series, formato, titulo, sub }: { com
         <div style={{ position: "relative" }} ref={caixa}>
           <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ maxWidth: "100%" }} role="img" aria-label={`${titulo}. ${series.map((s) => `${nomeCurto(s.nome)}: ${s.valores.map((v, i) => `${mesAbrev(comps[i])} ${v === null ? "sem dado" : fmt(formato, v, true)}`).join(", ")}`).join(". ")}`}
             onMouseLeave={() => setFoco(null)}>
-            {[0, 0.5, 1].map((k) => <line key={k} x1={esq} x2={W - dir} y1={base - (base - topo) * k} y2={base - (base - topo) * k} stroke={k === 0 ? "#e3e7ec" : "#eef1f4"} />)}
+            {[0, 0.5, 1].map((k) => <line key={k} x1={esq} x2={W - dir} y1={base - (base - topo) * k} y2={base - (base - topo) * k} style={{ stroke: k === 0 ? "var(--chart-base)" : "var(--chart-grid)" }} />)}
             {comps.map((c, i) => (comps.length - 1 - i) % cada === 0 && (
-              <text key={c} x={x(i)} y={base + 18} fontSize="10.5" fill="#8894a1" textAnchor="middle">{mesAbrev(c)}{c.endsWith("-01") || i === 0 ? `/${c.slice(2, 4)}` : ""}</text>
+              <text key={c} x={x(i)} y={base + 18} fontSize="10.5" style={{ fill: "var(--chart-txt)" }} textAnchor="middle">{mesAbrev(c)}{c.endsWith("-01") || i === 0 ? `/${c.slice(2, 4)}` : ""}</text>
             ))}
-            {foco !== null && <line x1={x(foco)} x2={x(foco)} y1={topo} y2={base} stroke="#8894a1" strokeDasharray="3 3" />}
+            {foco !== null && <line x1={x(foco)} x2={x(foco)} y1={topo} y2={base} style={{ stroke: "var(--chart-txt)" }} strokeDasharray="3 3" />}
             {series.map((s) => (
               <g key={s.id}>
                 <path d={caminho(s)} fill="none" stroke={s.cor} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                 {s.valores.map((v, i) => v !== null && (foco === i || comps.length === 1) && (
-                  <circle key={i} cx={x(i)} cy={y(v)} r="4.5" fill={s.cor} stroke="#fff" strokeWidth="2" />
+                  <circle key={i} cx={x(i)} cy={y(v)} r="4.5" fill={s.cor} style={{ stroke: "var(--surface)" }} strokeWidth="2" />
                 ))}
               </g>
             ))}
             {dir > 16 && rotulosFim(series, y).map((l) => (
-              <text key={l.id} x={x(l.i) + 8} y={l.y + 4} fontSize="11" fill="#142033" fontWeight="600">{nomeCurto(l.nome).slice(0, 16)}</text>
+              <text key={l.id} x={x(l.i) + 8} y={l.y + 4} fontSize="11" style={{ fill: "var(--chart-ink)" }} fontWeight="600">{nomeCurto(l.nome).slice(0, 16)}</text>
             ))}
             {/* Faixas de toque maiores que a marca: uma por mês. */}
             {comps.map((c, i) => (

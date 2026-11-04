@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Ic, type IcNome } from "./Ic";
+import { TemaBotao } from "./TemaBotao";
 
 type Perfil = "admin" | "operador";
 type Item = { href: string; nome: string; ic: IcNome; so?: Perfil };
@@ -91,6 +92,7 @@ export function Shell({ children, usuario, avisos, sair, demo = false }: {
           <div className="titulo"><h2>{titulo}</h2><div className="sub">{sub}</div></div>
           <div className="a-top-actions">
             {demo && <Link className="selo-demo" href="/painel/configuracoes#demonstracao" title="Dados de demonstração ativos">Demonstração</Link>}
+            <TemaBotao />
             <details className="sino" key={path}>
               <summary className="bell-btn" aria-label="Avisos">
                 <Ic n="sino" />
