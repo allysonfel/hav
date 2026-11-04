@@ -495,7 +495,7 @@ table.dt td { padding: 12px 14px; border-bottom-color: var(--soft); }
 .barras-b { display: block; transition: background .16s ease; }
 .barras-b { position: relative; border-radius: 5px 5px 0 0; background: color-mix(in srgb, var(--cor-barra) 30%, transparent); transform-origin: bottom; animation: subirBarra .5s cubic-bezier(.3,.8,.3,1) both; }
 .barras-b.hi { background: var(--cor-barra); }
-.barras-b.proj { background: transparent; border: 1.5px dashed var(--cor-barra); border-bottom: none; }
+.barras-b.proj { background: transparent; border: 1.5px dashed var(--cor-barra); }
 .barras-b.proj.hi { background: color-mix(in srgb, var(--cor-barra) 22%, transparent); }
 .barras-col.sel .barras-mes { color: var(--ink); font-weight: 700; }
 .barras-b b { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); font-size: 11.5px; font-weight: 700; color: var(--ink); white-space: nowrap; }
