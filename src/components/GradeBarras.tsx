@@ -31,8 +31,8 @@ export function GradeBarras({ itens, tipo, cabem, comUnidade, titulo, meta }: {
     <>
     <div className="barras-leitura" aria-live="polite">
       {atual && <>
-        <b className="num">{leitura(atual.valor)}</b>
         <span>{mes(atual)}{atual.proj ? " · projeção" : meta && tipo === "kwh" ? ` · ${num((atual.valor / meta) * 100)}% do esperado` : ""}</span>
+        <b className="num">{leitura(atual.valor)}</b>
       </>}
     </div>
     <div className={`barras barras-${tipo}`} role="group" aria-label={`${titulo}: toque em um mês para ver o valor${meta ? `; esperado ${rotulo(meta)} por mês` : ""}`}>
