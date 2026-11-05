@@ -59,6 +59,7 @@ export function Shell({ children, usuario, avisos, sair, demo = false }: {
 
   return (
     <div className="shell">
+      {menu && <div className="a-veu" onClick={() => setMenu(false)} aria-hidden="true" />}
       <aside className={`a-sidebar${menu ? " aberta" : ""}`}>
         <Link className="a-brand" href="/painel">
           {/* eslint-disable-next-line @next/next/no-img-element */}

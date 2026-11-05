@@ -141,7 +141,7 @@ svg { display: block; }
 .login-foot { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-faint); }
 
 /* ---- shell ---- */
-.shell { display: flex; min-height: 100vh; background: var(--bg); animation: panelIn .32s ease both; }
+.shell { display: flex; min-height: 100vh; background: var(--bg); animation: panelIn .32s ease backwards; }
 .a-sidebar { width: 220px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column; padding: 20px 14px; position: sticky; top: 0; height: 100vh; }
 .a-brand { display: flex; align-items: center; gap: 9px; padding: 4px 8px 22px; text-decoration: none; color: #fff; }
 .a-brand img { width: 28px; height: 28px; object-fit: contain; background: #fff; border-radius: 7px; padding: 2px; }
@@ -182,7 +182,7 @@ svg { display: block; }
 .sino-lista p { margin: 0; padding: 12px 10px; font-size: 13px; color: var(--ink-muted); }
 .btn-menu { display: none; }
 .mob-logo { display: none; }
-.a-content { padding: 26px 28px 60px; animation: panelIn .28s ease both; }
+.a-content { padding: 26px 28px 60px; animation: panelIn .28s ease backwards; }
 
 @keyframes panelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes navIndicatorIn { from { height: 0; opacity: 0; } to { height: 16px; opacity: 1; } }
@@ -192,7 +192,7 @@ svg { display: block; }
 @keyframes menuIn { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
 
 .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
-.kpi { padding: 18px 18px 16px; animation: cardIn .32s ease both; }
+.kpi { padding: 18px 18px 16px; animation: cardIn .32s ease backwards; }
 .kpi:nth-child(2) { animation-delay: .05s; }
 .kpi:nth-child(3) { animation-delay: .1s; }
 .kpi:nth-child(4) { animation-delay: .15s; }
@@ -226,7 +226,7 @@ a.row-name:hover { text-decoration: underline; }
 .bars-chart .h-sub { font-size: 11.5px; color: var(--ink-muted); margin-bottom: 12px; }
 
 .plant-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.plant-card { padding: 16px; display: block; text-decoration: none; color: inherit; animation: cardIn .3s ease both; }
+.plant-card { padding: 16px; display: block; text-decoration: none; color: inherit; animation: cardIn .3s ease backwards; }
 .plant-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -8px var(--sombra); }
 .plant-card:active { transform: scale(.99); }
 .plant-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
@@ -267,7 +267,7 @@ a.row-name:hover { text-decoration: underline; }
 .inv-top .brand img { width: 26px; height: 26px; }
 .inv-top .brand span { font-weight: 700; font-size: 13.5px; color: var(--accent-ink); }
 .inv-top .bell-dot { top: 4px; right: 5px; }
-.inv-scroll { padding: 18px 16px 100px; animation: panelIn .24s ease both; }
+.inv-scroll { padding: 18px 16px 100px; animation: panelIn .24s ease backwards; }
 .hello { margin-bottom: 16px; }
 .hello .hi { font-size: 12.5px; color: var(--ink-muted); }
 .hello h2 { margin: 3px 0 0; font-size: 19px; }
@@ -335,7 +335,7 @@ a.profile-row:active { opacity: .6; }
 @media (max-width: 760px) {
   .shell { display: block; }
   .a-sidebar { display: none; position: fixed; inset: 60px 0 auto 0; width: 100%; height: auto; max-height: calc(100vh - 60px); overflow-y: auto; z-index: 20; padding: 8px 14px 14px; box-shadow: 0 20px 40px rgba(8,20,35,.4); }
-  .a-sidebar.aberta { display: flex; animation: panelIn .18s ease both; }
+  .a-sidebar.aberta { display: flex; animation: panelIn .18s ease backwards; }
   .a-brand { display: none; }
   .a-topbar { padding: 11px 14px; background: var(--side); border-bottom: none; color: #fff; min-height: 60px; }
   .a-topbar .titulo { display: none; }
@@ -372,7 +372,7 @@ a.profile-row:active { opacity: .6; }
 .ai-fab .icon { width: 23px; height: 23px; }
 .ai-fab-painel { right: 28px; bottom: 28px; }
 .ai-fab-app { right: max(16px, calc(50vw - 224px)); bottom: calc(84px + env(safe-area-inset-bottom)); width: 46px; height: 46px; }
-.ai-panel { position: fixed; width: 360px; max-width: calc(100vw - 32px); background: var(--surface); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 24px 50px -16px var(--sombra); z-index: 41; overflow: hidden; display: flex; flex-direction: column; max-height: min(560px, calc(100dvh - 120px)); animation: panelIn .18s ease both; }
+.ai-panel { position: fixed; width: 360px; max-width: calc(100vw - 32px); background: var(--surface); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 24px 50px -16px var(--sombra); z-index: 41; overflow: hidden; display: flex; flex-direction: column; max-height: min(560px, calc(100dvh - 120px)); animation: panelIn .18s ease backwards; }
 .ai-panel-painel { right: 28px; bottom: 90px; }
 .ai-panel-app { right: max(16px, calc(50vw - 224px)); bottom: calc(140px + env(safe-area-inset-bottom)); width: 320px; max-height: calc(100dvh - 210px); }
 .ai-panel-head { background: var(--side); color: #fff; padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
@@ -543,3 +543,14 @@ table.dt td { padding: 12px 14px; border-bottom-color: var(--soft); }
   .mob-titulo h2 { font-size: 20px; font-weight: 600; }
   .a-grupo { padding-top: 12px; }
 }
+
+/* Menu do celular: gaveta lateral que desliza da esquerda, abaixo da barra do topo, com véu escuro atrás. */
+.a-veu { display: none; }
+@media (max-width: 760px) {
+  .a-sidebar { inset: 60px auto 0 0; width: min(300px, 84vw); height: auto; max-height: none; padding: 14px 12px 16px; box-shadow: 12px 0 32px rgba(8,20,35,.35); z-index: 21; }
+  .a-sidebar.aberta { display: flex; animation: gavetaIn .26s cubic-bezier(.2,.8,.2,1) backwards; }
+  .a-veu { display: block; position: fixed; inset: 60px 0 0 0; background: rgba(8,20,35,.45); z-index: 20; animation: veuIn .26s ease both; }
+  body:has(.a-sidebar.aberta) { overflow: hidden; }
+}
+@keyframes gavetaIn { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes veuIn { from { opacity: 0; } to { opacity: 1; } }
