@@ -57,6 +57,7 @@ const GUIA_PAINEL = `Telas do painel (menu à esquerda; no celular, botão de me
 - Relatórios: meses fechados por usina (filtro de repasse pendente) ou por investidor; baixar planilha.
 - Equipe (admin): usuários e perfis (administrador ou operador). Configurações (admin): empresa, período de apuração (padrão: do dia 21 ao dia 20 do mês seguinte; setembro = 21/08 a 20/09), dia de fechamento, prazo para pagar os repasses (dias depois de fechar), contatos, Oportunidades no app, projeção no app, e-mail automático, este agente as taxas do comparativo do relatório (CDI, FIIs e poupança, em % no período) e o responsável pelo relatório (nome e cargo, saem no fim do PDF).
 - Sino no alto: pendências (mês a lançar, usina abaixo do esperado, rascunho a fechar, cotas que não somam 100%, interessados, repasses pendentes ou atrasados).
+- Ações que apagam ou desfazem (excluir usina ou investidor, remover cota, reabrir mês, desfazer repasse pago, desativar investidor ou pessoa da equipe, remover dados de demonstração) abrem uma caixa pedindo confirmação: "Cancelar" não muda nada.
 - Operador: lança geração e emite relatórios; não fecha mês, não vê valores de captação nem dados bancários.`;
 
 const GUIA_APP = `Telas do app do investidor (barra de baixo: Início, Usinas, Relatórios, Perfil; Oportunidades só quando a empresa liga):

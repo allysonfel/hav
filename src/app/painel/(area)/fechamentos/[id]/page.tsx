@@ -10,6 +10,7 @@ import { atrasado, previsaoRepasse, relacaoEsperado, situacaoEsperado } from "@/
 import { AnexarComprovante } from "@/components/AnexarComprovante";
 import { STATUS_ENVIO, enviosDoFechamento } from "@/lib/envios";
 import { getSettings } from "@/lib/settings";
+import { Confirmar } from "@/components/Confirmar";
 
 const ERROS: Record<string, string> = {
   cotas: "As cotas desta usina não somam 100%. Ajuste os cotistas antes de fechar.",
@@ -88,7 +89,7 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
           {!fechado && <Link className="btn btn-ghost" href={`/painel/usinas/${f.usina_id}/lancar?comp=${f.comp}`}>Corrigir lançamento</Link>}
           {fechado && <a className="btn btn-ghost" href={`/painel/fechamentos/${id}/pdf`}>Baixar PDF</a>}
           {fechado && <a className="btn btn-ghost" href={`/painel/fechamentos/${id}/exportar`}>Baixar planilha</a>}
-          {fechado && admin && <form action={reabrirMes}><input type="hidden" name="id" value={id} /><button className="btn btn-ghost">Reabrir mês</button></form>}
+          {fechado && admin && <form action={reabrirMes}><input type="hidden" name="id" value={id} /><Confirmar className="btn btn-ghost" titulo={`Reabrir ${f.usina}, ${f.comp.slice(5)}/${f.comp.slice(0, 4)}?`} texto={<><p>O mês volta para rascunho: o rateio é refeito ao fechar de novo e os e-mails do relatório que ainda não saíram são cancelados.</p><p>Os investidores deixam de ver este mês no app até ele ser fechado de novo.</p></>} confirmar="Reabrir mês" perigo={false}>Reabrir mês</Confirmar></form>}
           {!fechado && admin && <form action={fecharMes}><input type="hidden" name="id" value={id} /><button className="btn btn-gold">Fechar mês</button></form>}
         </div>
       </div>
@@ -147,7 +148,7 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
                         <input type="hidden" name="fechamento" value={id} />
                         <input type="hidden" name="rateio" value={l.id} />
                         <input type="hidden" name="pago" value={l.repasse_status === "pago" ? "0" : "1"} />
-                        <button className="btn btn-ghost btn-sm">{l.repasse_status === "pago" ? "Desfazer" : "Marcar pago"}</button>
+                        <Confirmar className="btn btn-ghost btn-sm" ativo={l.repasse_status === "pago"} titulo={`Desfazer o pagamento de ${l.nome}?`} texto={l.comprovante ? "O repasse volta para pendente e o comprovante anexado é apagado." : "O repasse volta para pendente."} confirmar="Desfazer pagamento">{l.repasse_status === "pago" ? "Desfazer" : "Marcar pago"}</Confirmar>
                       </form>}
                     </div></td>
                   )}

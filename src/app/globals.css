@@ -615,3 +615,20 @@ a.box:active { background: rgba(255,255,255,.14); }
 .barras-leitura b { font-family: var(--titulo); font-size: 19px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
 .barras-leitura span { font-size: 12.5px; color: var(--ink-muted); }
 .barras { padding-top: 8px; }
+
+/* Confirmação antes de ação que apaga ou desfaz (components/Confirmar.tsx). */
+.confirmar { text-align: left; white-space: normal; width: 400px; max-width: calc(100vw - 32px); border: 1px solid var(--border); border-radius: 14px; padding: 0; background: var(--surface); color: var(--ink); box-shadow: 0 30px 60px -20px var(--sombra); }
+.confirmar[open] { animation: confirmarIn .18s ease both; }
+.confirmar::backdrop { background: rgba(8,20,35,.45); animation: veuIn .18s ease both; }
+.confirmar-corpo { padding: 22px 22px 18px; }
+.confirmar h3 { margin: 0 0 8px; font-family: var(--titulo); font-size: 17px; font-weight: 700; }
+.confirmar-texto { font-size: 13.5px; line-height: 1.5; color: var(--ink-muted); }
+.confirmar-texto p { margin: 0 0 8px; }
+.confirmar-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.btn-perigo { background: var(--danger); color: #fff; }
+:root[data-theme="dark"] .btn-perigo { background: #c43c3c; }
+.btn:disabled { opacity: .6; cursor: default; }
+@keyframes confirmarIn { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes veuIn { from { opacity: 0; } }
+@media (max-width: 520px) { .confirmar-acoes .btn { flex: 1; } }
+@media (prefers-reduced-motion: reduce) { .confirmar[open], .confirmar::backdrop { animation: none; } }

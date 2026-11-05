@@ -10,6 +10,7 @@ import { Kpi, Retorno } from "@/components/basicos";
 import { lerSegredo } from "@/lib/segredo";
 import { ativarInvestidor, gerarAcesso } from "../acoes";
 import { pctTexto } from "@/lib/acompanhamento";
+import { Confirmar } from "@/components/Confirmar";
 
 const cpfFormatado = (d: string) => `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 
@@ -69,7 +70,7 @@ export default async function Investidor({ params, searchParams }: { params: Pro
               <form action={ativarInvestidor}>
                 <input type="hidden" name="id" value={i.id} />
                 <input type="hidden" name="ativo" value={i.ativo ? "0" : "1"} />
-                <button className={`btn ${i.ativo ? "btn-danger" : "btn-ghost"}`}>{i.ativo ? "Desativar" : "Reativar"}</button>
+                <Confirmar className={`btn ${i.ativo ? "btn-danger" : "btn-ghost"}`} ativo={i.ativo} titulo={`Desativar ${i.nome}?`} texto="O investidor sai do app na hora e não consegue mais entrar. As cotas e o histórico continuam. Dá para reativar depois." confirmar="Desativar">{i.ativo ? "Desativar" : "Reativar"}</Confirmar>
               </form>
             </div>
           )}

@@ -13,6 +13,7 @@ import { after } from "next/server";
 import { getSettings } from "@/lib/settings";
 import { sincronizarVencidas } from "@/lib/monitoramento";
 import { QuadroPeriodo } from "@/components/QuadroPeriodo";
+import { Confirmar } from "@/components/Confirmar";
 
 const ERROS: Record<string, string> = {
   valor: "Informe o valor investido.",
@@ -126,7 +127,7 @@ export default async function Usina({ params, searchParams }: { params: Promise<
                         <form action={removerCota}>
                           <input type="hidden" name="usina" value={u.id} />
                           <input type="hidden" name="investidor" value={c.investidor_id} />
-                          <button className="btn btn-danger btn-sm">Remover</button>
+                          <Confirmar className="btn btn-danger btn-sm" titulo={`Remover a cota de ${c.nome}?`} texto={<><p>{c.nome} deixa de ser cotista da {u.nome} ({pct(c.cota_ppm)}) e não entra nos próximos fechamentos.</p><p>Os meses já fechados continuam no histórico. Para voltar, é só adicionar a cota de novo.</p></>} confirmar="Remover cota">Remover</Confirmar>
                         </form>
                       </td>
                     )}

@@ -9,6 +9,7 @@ import { demoAtiva } from "@/lib/demo";
 import { alternarDemo } from "./configuracoes/acoes";
 import { MesAtual } from "@/components/MesAtual";
 import { relacaoEsperado, situacaoEsperado } from "@/lib/acompanhamento";
+import { Confirmar } from "@/components/Confirmar";
 
 export default async function VisaoGeral({ searchParams }: { searchParams: Promise<{ erro?: string; demo?: string; demo_erro?: string }> }) {
   const u = await requireUser();
@@ -46,9 +47,9 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Promi
           <form action={alternarDemo}>
             <input type="hidden" name="acao" value={demo ? "desligar" : "ligar"} />
             <input type="hidden" name="de" value="/painel" />
-            <button className={`toggle${demo ? " on" : ""}`} role="switch" aria-checked={demo} title={demo ? "Remover os dados de demonstração" : "Preencher o sistema com dados fictícios para apresentar"}>
+            <Confirmar className={`toggle${demo ? " on" : ""}`} role="switch" aria-checked={demo} title={demo ? "Remover os dados de demonstração" : "Preencher o sistema com dados fictícios para apresentar"} ativo={demo} titulo="Remover os dados de demonstração?" texto="Sai tudo o que a demonstração criou (usinas, investidores e meses fictícios). Os cadastros reais ficam." confirmar="Remover dados" perigo={false}>
               <i /> Dados de demonstração
-            </button>
+            </Confirmar>
           </form>
         </div>
       )}

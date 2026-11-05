@@ -9,6 +9,7 @@ import { guardarSegredo, lerSegredo } from "@/lib/segredo";
 import { haQuanto } from "@/lib/format";
 import { EMAIL } from "@/lib/settings";
 import { Retorno } from "@/components/basicos";
+import { Confirmar } from "@/components/Confirmar";
 
 type Pessoa = { id: number; nome: string; email: string; perfil: Perfil; ativo: boolean; ultimo_acesso: Date | null };
 
@@ -130,7 +131,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
                         <form action={ativar}>
                           <input type="hidden" name="id" value={p.id} />
                           <input type="hidden" name="ativo" value={p.ativo ? "0" : "1"} />
-                          <button className={`btn btn-sm ${p.ativo ? "btn-danger" : "btn-ghost"}`}>{p.ativo ? "Desativar" : "Reativar"}</button>
+                          <Confirmar className={`btn btn-sm ${p.ativo ? "btn-danger" : "btn-ghost"}`} ativo={p.ativo} titulo={`Desativar ${p.nome}?`} texto="A pessoa sai do painel na hora e não consegue mais entrar. Dá para reativar depois." confirmar="Desativar">{p.ativo ? "Desativar" : "Reativar"}</Confirmar>
                         </form>
                       </div>
                     )}

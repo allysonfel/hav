@@ -10,6 +10,7 @@ import { iaConfigurada } from "@/lib/ia";
 import { solisConfigurada } from "@/lib/monitoramento/solis";
 import { demoAtiva } from "@/lib/demo";
 import { alternarDemo } from "./acoes";
+import { Confirmar } from "@/components/Confirmar";
 
 async function salvar(fd: FormData) {
   "use server";
@@ -142,7 +143,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
         </p>
         <form action={alternarDemo}>
           <input type="hidden" name="acao" value={demo ? "desligar" : "ligar"} />
-          <button className={demo ? "btn btn-ghost" : "btn btn-gold"}>{demo ? "Remover dados de demonstração" : "Carregar dados de demonstração"}</button>
+          <Confirmar className={demo ? "btn btn-ghost" : "btn btn-gold"} ativo={demo} titulo="Remover os dados de demonstração?" texto="Sai tudo o que a demonstração criou (usinas, investidores e meses fictícios). Os cadastros reais ficam." confirmar="Remover dados" perigo={false}>{demo ? "Remover dados de demonstração" : "Carregar dados de demonstração"}</Confirmar>
         </form>
       </div>
     </>
