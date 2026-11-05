@@ -14,6 +14,7 @@ import type { Usuario } from "./session";
 import type { Investidor } from "./investidor";
 import { getSettings, type Settings } from "./settings";
 import { PERFIL_NOME } from "./session";
+import { pctTexto, rendimentoInvestidor } from "./acompanhamento";
 
 export type Tela = { nome: string; href: string };
 export type Resposta = { t: string; ir: Tela | null };
@@ -47,24 +48,24 @@ const TELAS_APP: Record<string, Tela> = {
 };
 
 const GUIA_PAINEL = `Telas do painel (menu à esquerda; no celular, botão de menu no alto):
-- Visão geral: usinas ativas, capacidade, geração e receita do último mês, gráfico de 12 meses com projeção dos próximos 3, captação em andamento (admin), tabela das usinas.
-- Usinas: lista e cadastro (admin). Na usina: histórico de 12 ou 24 meses com projeção, cotistas (admin adiciona, altera ou remove cota; sem percentual, a cota é valor investido / investimento total), lançamentos e inversores. Botão "Lançar geração do mês" (geração em kWh e receita em R$; fica como rascunho).
-- Fechamento do mês: abrir o lançamento; só o administrador fecha (as cotas precisam somar 100% exatos). Ao fechar, o rateio fica gravado, os investidores recebem aviso no app e, se ligado em Configurações, o relatório em PDF por e-mail. Na mesma tela: baixar PDF ou planilha, PDF de cada investidor, marcar repasse pago (um a um ou todos), reenviar e-mail, reabrir o mês (só sem repasse pago).
+- Visão geral: no topo, o quadro "Mês de <mês>: o que falta", com o passo de cada usina (lançar, conferir e fechar, pagar repasses) e o botão do próximo passo. Depois: usinas ativas, capacidade, geração e receita do último mês, gráfico de 12 meses com projeção dos próximos 3, captação em andamento (admin), tabela das usinas com "% do esperado".
+- Usinas: lista e cadastro (admin). Na usina: histórico de 12 ou 24 meses com projeção, cotistas (admin adiciona, altera ou remove cota; sem percentual, a cota é valor investido / investimento total), lançamentos e inversores. Botão "Lançar geração do mês" (geração em kWh e receita em R$ já descontados os custos; fica como rascunho). Em Editar, "Geração esperada por mês" (média do projeto): com ela os gráficos mostram a linha do esperado, os números mostram "% do esperado" e o sino avisa abaixo de 85%.
+- Fechamento do mês: abrir o lançamento; só o administrador fecha (as cotas precisam somar 100% exatos). Ao fechar, o rateio fica gravado, os investidores recebem aviso no app e, se ligado em Configurações, o relatório em PDF por e-mail. Na mesma tela: baixar PDF ou planilha, PDF de cada investidor, marcar repasse pago (um a um ou todos), "Pagar com comprovante" (anexa a imagem ou PDF do Pix, até 3 MB, e já marca como pago; o investidor baixa no app), trocar comprovante, desfazer (apaga o comprovante), reenviar e-mail, reabrir o mês (só sem repasse pago). Uma linha "Próximo passo" diz o que fazer; repasse depois do prazo aparece como Atrasado.
 - Investidores: lista, cadastro (CPF/CNPJ e chave Pix ficam criptografados), ficha com cotas, receita e repasses, convite de acesso ao app (link de 7 dias).
 - Captação (admin): usinas em captação, meta, captado, interessados (aguardando, negociação, confirmado, desistiu); confirmar interesse vira cota.
 - Comparativo: usinas lado a lado em geração, receita, produtividade (kWh por kWp) ou receita por kWp, em 6, 12 ou 24 meses, com ranking.
 - Relatórios: meses fechados por usina (filtro de repasse pendente) ou por investidor; baixar planilha.
-- Equipe (admin): usuários e perfis (administrador ou operador). Configurações (admin): empresa, dia de fechamento, contatos, Oportunidades no app, projeção no app, e-mail automático e este agente.
-- Sino no alto: pendências (mês a lançar, rascunho a fechar, cotas que não somam 100%, interessados, repasses pendentes).
+- Equipe (admin): usuários e perfis (administrador ou operador). Configurações (admin): empresa, dia de fechamento, prazo para pagar os repasses (dias depois de fechar), contatos, Oportunidades no app, projeção no app, e-mail automático e este agente.
+- Sino no alto: pendências (mês a lançar, usina abaixo do esperado, rascunho a fechar, cotas que não somam 100%, interessados, repasses pendentes ou atrasados).
 - Operador: lança geração e emite relatórios; não fecha mês, não vê valores de captação nem dados bancários.`;
 
 const GUIA_APP = `Telas do app do investidor (barra de baixo: Início, Usinas, Relatórios, Perfil; Oportunidades só quando a empresa liga):
-- Início: receita proporcional do último mês fechado, geração proporcional, gráfico da receita nos últimos meses.
-- Usinas: cada usina em que tem cota, percentual, valor investido, capacidade; comparativo entre as suas usinas quando tem mais de uma.
-- Relatórios: um por mês fechado de cada usina, com repasse pago ou pendente; baixar em PDF ou planilha.
+- Início: receita do último mês fechado e quanto ela representa do valor investido (%), sua parte da geração, situação do repasse (pago com data, ou previsto até a data); "Seu retorno até agora" (investido, já recebido, a receber e quanto do valor investido já voltou); gráfico da receita (tocar num mês mostra o valor); suas usinas com "% do esperado".
+- Usinas: cada usina em que tem cota, percentual, valor investido, capacidade, quanto já recebeu dela (% do investido), média por mês (% do investido) e a geração do último mês com "% do esperado"; comparativo entre as suas usinas quando tem mais de uma.
+- Relatórios: um por mês fechado de cada usina, com repasse pago (data e "ver comprovante" quando a equipe anexou) ou previsto até a data; baixar em PDF ou planilha.
 - Sino no alto (Avisos): mês fechado e repasse pago. Em Perfil > Notificações dá para ligar ou desligar o relatório mensal por e-mail.
 - Perfil: dados pessoais, dados bancários para repasse (trocar a chave Pix pede a senha), segurança e senha, baixar cópia dos dados, central de ajuda, falar com a empresa, aviso de privacidade, sair.
-- Receita só aparece depois que a equipe fecha o mês. Repasse pendente: valor calculado, pagamento ainda não registrado. O pagamento é feito fora do app.
+- Receita só aparece depois que a equipe fecha o mês. Repasse pendente: valor calculado, pagamento ainda não registrado; a data prevista é o fechamento mais o prazo da empresa. O pagamento é feito fora do app. "% do esperado": geração do mês sobre a geração esperada do projeto; abaixo de 85% aparece em amarelo (chuva, nuvens ou manutenção). Retorno e % são de meses já fechados, nunca promessa.
 - Esqueceu a senha: na tela de entrar, "Esqueci a senha".`;
 
 const REGRAS = (quem: "equipe" | "investidor", s: Settings) => `Você é o Agente ${s.empresa}, assistente ${quem === "equipe" ? "da equipe interna no painel" : "do investidor no app"} de usinas solares com cotistas.
@@ -152,8 +153,8 @@ async function contextoEquipe(u: Usuario, s: Settings): Promise<string> {
 // ---------- contexto do investidor ----------
 
 async function contextoInvestidor(i: Investidor, s: Settings): Promise<string> {
-  const cotas = await sql<{ usina_id: number; nome: string; cidade: string; uf: string; status: string; desde: string | null; capacidade_wp: number; cota_ppm: number; valor_centavos: number }[]>`
-    SELECT c.usina_id, u.nome, u.cidade, u.uf, u.status, to_char(u.operando_desde, 'YYYY-MM') AS desde, u.capacidade_wp, c.cota_ppm, c.valor_centavos
+  const cotas = await sql<{ usina_id: number; nome: string; cidade: string; uf: string; status: string; desde: string | null; capacidade_wp: number; cota_ppm: number; valor_centavos: number; esperada: number | null }[]>`
+    SELECT c.usina_id, u.nome, u.cidade, u.uf, u.status, to_char(u.operando_desde, 'YYYY-MM') AS desde, u.capacidade_wp, c.cota_ppm, c.valor_centavos, u.geracao_esperada_wh AS esperada
     FROM cotas c JOIN usinas u ON u.id = c.usina_id WHERE c.investidor_id = ${i.id} AND c.ativa ORDER BY u.nome`;
   const meses = await sql<{ usina_id: number; usina: string; comp: string; f_geracao: number; f_receita: number; cota_ppm: number; geracao_wh: number; receita_centavos: number; repasse_status: string; pago_em: Date | null }[]>`
     SELECT f.usina_id, u.nome AS usina, to_char(f.competencia, 'YYYY-MM') AS comp, f.geracao_wh AS f_geracao, f.receita_centavos AS f_receita,
@@ -167,6 +168,7 @@ async function contextoInvestidor(i: Investidor, s: Settings): Promise<string> {
     const st = c.status === "operando" ? "Operando" : c.status === "captacao" ? "Em captação" : "Pausada";
     partes.push(`- ${c.nome} | ${[c.cidade, c.uf].filter(Boolean).join(", ")} | ${st}${c.desde ? ` desde ${mesAno(c.desde)}` : ""} | capacidade ${kwp(c.capacidade_wp)} | sua cota ${pct(c.cota_ppm)} | você investiu ${brl0(c.valor_centavos)}`);
     const m = meses.filter((x) => x.usina_id === c.usina_id).slice(-12);
+    if (c.esperada && m.length) { const ult = m[m.length - 1]; partes.push(`  Geração esperada da usina: ${kwh(c.esperada)} por mês; em ${mesAno(ult.comp)} gerou ${pctTexto(ult.f_geracao, c.esperada)} do esperado.`); }
     if (c.status !== "captacao") partes.push(`  ${indicadores(m.map((x) => ({ comp: x.comp, geracao_wh: x.f_geracao, receita_centavos: x.f_receita })), c.capacidade_wp)} (números da usina inteira)`);
     partes.push(`  Meses fechados (mês: geração da usina; sua geração; receita da usina; sua receita; sua cota no mês; repasse): ${linhaMeses(m.map((x) => `${mesAno(x.comp)}: ${kwh(x.f_geracao)}; ${kwh(x.geracao_wh)}; ${brl(x.f_receita)}; ${brl(x.receita_centavos)}; ${pct(x.cota_ppm)}; ${x.repasse_status === "pago" ? `pago${x.pago_em ? ` em ${dataBr(x.pago_em)}` : ""}` : "pendente"}`))}`);
     if (s.projecaoApp && c.status === "operando") {
@@ -180,6 +182,9 @@ async function contextoInvestidor(i: Investidor, s: Settings): Promise<string> {
   partes.push(`SUA RECEITA POR MÊS (soma das suas usinas; o primeiro é o último mês fechado): ${resumoMensal(meses, cotas.filter((c) => c.status !== "captacao").length)}`);
   const total = meses.reduce((a, x) => a + x.receita_centavos, 0);
   const pend = meses.filter((x) => x.repasse_status === "pendente");
+  const rend = await rendimentoInvestidor(i.id);
+  if (rend.investido > 0) partes.push(`RETORNO (meses fechados, números reais): investido ${brl0(rend.investido)}; já recebido (pago) ${brl0(rend.recebido)}; a receber ${brl0(rend.aReceber)}; já voltou ${pctTexto(rend.recebido + rend.aReceber, rend.investido)} do valor investido${rend.ultimo ? `; ${mesAno(rend.ultimo.comp)} rendeu ${pctTexto(rend.ultimo.receita, rend.investido)} do investido` : ""}.`);
+  partes.push(`PRAZO DO REPASSE: até ${s.prazoRepasse} dias depois de a empresa fechar o mês.`);
   partes.push(`TOTAIS (últimos 24 meses): receita ${brl(total)}; repasses pendentes ${pend.length ? `${pend.length} (${brl(pend.reduce((a, x) => a + x.receita_centavos, 0))})` : "nenhum"}.`);
   partes.push(`CONTATO DA EMPRESA: ${[s.suporteWhatsapp && `WhatsApp +${s.suporteWhatsapp}`, s.suporteEmail].filter(Boolean).join(", ") || "pela equipe"}. Oportunidades no app: ${s.oportunidades ? "ligada" : "desligada (não fale de usinas em captação)"}.`);
   return partes.join("\n");

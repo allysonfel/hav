@@ -4,11 +4,14 @@ import { meusRelatorios } from "@/lib/app";
 import { brl, dataBr, kwh, mesLongo } from "@/lib/format";
 import { nomeCurtoUsina } from "@/lib/investidores";
 import { Ic } from "@/components/Ic";
+import { getSettings } from "@/lib/settings";
+import { atrasado, previsaoRepasse } from "@/lib/acompanhamento";
 
 export default async function Relatorios({ searchParams }: { searchParams: Promise<{ usina?: string }> }) {
   const i = await requireInvestidor();
   const { usina } = await searchParams;
   const todos = await meusRelatorios(i.id);
+  const cfg = await getSettings();
   const usinas = [...new Map(todos.map((r) => [r.usina_id, r.usina])).entries()];
   const atual = usinas.find(([id]) => id === Number(usina))?.[0] ?? usinas[0]?.[0];
   const lista = todos.filter((r) => r.usina_id === atual);
@@ -29,7 +32,15 @@ export default async function Relatorios({ searchParams }: { searchParams: Promi
               <div className="meta">
                 <b>Relatório de {mesLongo(r.comp)}</b>
                 <span>{kwh(r.geracao_wh)} · {brl(r.receita_centavos)} · emitido em {dataBr(r.fechado_em).slice(0, 5)}</span>
-                <span className={r.repasse_status === "pago" ? "ok-txt" : "warn-txt"}>{r.repasse_status === "pago" ? "Repasse pago" : "Repasse pendente"}</span>
+                {r.repasse_status === "pago" ? (
+                  <span className="ok-txt">
+                    Repasse pago{r.pago_em ? ` em ${dataBr(r.pago_em)}` : ""}
+                    {r.comprovante && <> · <a className="link" href={`/relatorios/${r.fechamento_id}/comprovante`} target="_blank" rel="noopener">ver comprovante</a></>}
+                  </span>
+                ) : (() => {
+                  const p = previsaoRepasse(r.fechado_em, cfg.prazoRepasse);
+                  return <span className="warn-txt">{atrasado(p, "pendente") ? `Repasse aguardando (previsto era ${dataBr(p!)})` : `Repasse previsto até ${p ? dataBr(p) : "—"}`}</span>;
+                })()}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <a className="btn btn-gold btn-sm" href={`/relatorios/${r.fechamento_id}/pdf`}>PDF</a>

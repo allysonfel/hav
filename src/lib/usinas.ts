@@ -19,12 +19,13 @@ export type UsinaResumo = {
   geracao_wh: number | null;
   receita_centavos: number | null;
   comp: string | null;
+  geracao_esperada_wh: number | null;
 };
 
 // Com os números do último mês fechado de cada usina.
 export function listarUsinas() {
   return sql<UsinaResumo[]>`
-    SELECT u.id, u.nome, u.cidade, u.uf, u.capacidade_wp, u.investimento_centavos, u.status,
+    SELECT u.id, u.nome, u.cidade, u.uf, u.capacidade_wp, u.investimento_centavos, u.status, u.geracao_esperada_wh,
       count(c.id)::int AS cotistas,
       coalesce(sum(c.cota_ppm), 0)::int AS cotas_ppm,
       coalesce(sum(c.valor_centavos), 0)::bigint AS captado_centavos,

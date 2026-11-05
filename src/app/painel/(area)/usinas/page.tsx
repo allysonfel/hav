@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireUser, eAdmin } from "@/lib/session";
 import { listarUsinas, local } from "@/lib/usinas";
-import { brlCurto, kwp, pct } from "@/lib/format";
+import { brlCurto, kwh, kwp, mesAno, pct } from "@/lib/format";
+import { relacaoEsperado, situacaoEsperado } from "@/lib/acompanhamento";
 import { PillUsina, Retorno } from "@/components/basicos";
 
 export default async function Usinas({ searchParams }: { searchParams: Promise<{ ok?: string }> }) {
@@ -37,6 +38,15 @@ export default async function Usinas({ searchParams }: { searchParams: Promise<{
                   </div>
                 )}
               </div>
+              {x.comp && x.geracao_wh !== null && (() => {
+                const sit = situacaoEsperado(relacaoEsperado(x.geracao_wh, x.geracao_esperada_wh));
+                return (
+                  <div className="plant-ultimo">
+                    <span>{mesAno(x.comp)}: <b className="num">{kwh(x.geracao_wh)}</b></span>
+                    {sit && <span className={`pill pill-sm ${sit.classe}`}>{sit.texto}</span>}
+                  </div>
+                );
+              })()}
             </Link>
           );
         })}

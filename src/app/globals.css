@@ -554,3 +554,49 @@ table.dt td { padding: 12px 14px; border-bottom-color: var(--soft); }
 }
 @keyframes gavetaIn { from { transform: translateX(-100%); } to { transform: none; } }
 @keyframes veuIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Linha da geração esperada nos gráficos de barras */
+.barras { position: relative; }
+.barras-meta { position: absolute; left: 0; right: 0; height: 0; border-top: 1.5px dashed var(--ink-muted); opacity: .7; pointer-events: none; z-index: 1; }
+.barras-meta span { position: absolute; right: 0; top: -17px; font-size: 10.5px; font-weight: 700; color: var(--ink-muted); background: var(--surface); padding: 0 4px; border-radius: 4px; }
+.legenda .leg-meta { width: 16px; height: 0; border-top: 1.5px dashed var(--ink-muted); border-radius: 0; background: none; }
+
+/* Situação da geração e dos repasses (selos pequenos ao lado de números) */
+.pill-sm { font-size: 10.5px; padding: 2px 8px; }
+.pill-atraso { background: var(--danger-bg); color: var(--danger); }
+
+.plant-ultimo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--ink-muted); }
+.plant-ultimo b { color: var(--ink); }
+
+/* Quadro do mês na Visão geral */
+.mes-atual { margin-bottom: 18px; }
+.mes-lista { display: flex; flex-direction: column; }
+.mes-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--border); }
+.mes-item:first-child { border-top: none; }
+.mes-nome { flex: 1; min-width: 0; }
+.mes-nome b { display: block; font-size: 14px; }
+.mes-nome span { font-size: 12.5px; color: var(--ink-muted); }
+.mes-passos { display: flex; gap: 4px; flex-shrink: 0; }
+.mes-passos i { width: 18px; height: 6px; border-radius: 99px; background: var(--soft); }
+.mes-passos i.feito { background: var(--success); }
+.mes-passos i.agora { background: var(--gold); }
+@media (max-width: 760px) { .mes-item { flex-wrap: wrap; } .mes-passos { order: -1; width: 100%; } }
+
+/* App do investidor: retorno e repasse */
+a.box { text-decoration: none; color: inherit; transition: background .16s ease; }
+a.box:active { background: rgba(255,255,255,.14); }
+.hero-card .period b { color: #fff; font-weight: 700; }
+.retorno { margin-bottom: 16px; }
+.retorno-num { display: flex; gap: 18px; flex-wrap: wrap; }
+.retorno-num span { display: block; font-size: 11.5px; color: var(--ink-muted); }
+.retorno-num b { font-family: var(--titulo); font-size: 17px; font-weight: 600; }
+.retorno-frase { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-muted); }
+.retorno-frase b { color: var(--ink); }
+.mini-dados .pill { margin-left: auto; }
+
+.usina-retorno { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.usina-retorno span { display: block; font-size: 11px; color: var(--ink-muted); }
+.usina-retorno b { display: block; font-family: var(--titulo); font-size: 15px; font-weight: 600; margin: 1px 0; }
+.usina-retorno small { font-size: 11px; color: var(--ink-muted); }
+.usina-retorno small.ok { color: var(--success); font-weight: 700; }
+.usina-retorno small.abaixo { color: var(--gold-dark); font-weight: 700; }

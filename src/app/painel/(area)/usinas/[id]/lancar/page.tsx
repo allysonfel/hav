@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { sql } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
-import { COMPETENCIA, campoDecimal, competenciaEsperada, mesAno, mesAtual, somarMeses } from "@/lib/format";
+import { COMPETENCIA, campoDecimal, competenciaEsperada, kwh, mesAno, mesAtual, somarMeses } from "@/lib/format";
 import { Retorno } from "@/components/basicos";
 import { lancarGeracao } from "../../acoes";
 
@@ -19,7 +19,7 @@ export default async function Lancar({ params, searchParams }: { params: Promise
   const id = Number((await params).id);
   const sp = await searchParams;
   if (!Number.isInteger(id) || id < 1) notFound();
-  const [u] = await sql<{ id: number; nome: string; status: string }[]>`SELECT id, nome, status FROM usinas WHERE id = ${id}`;
+  const [u] = await sql<{ id: number; nome: string; status: string; geracao_esperada_wh: number | null }[]>`SELECT id, nome, status, geracao_esperada_wh FROM usinas WHERE id = ${id}`;
   if (!u) notFound();
   if (u.status === "captacao") redirect(`/painel/usinas/${id}`);
 
@@ -58,8 +58,10 @@ export default async function Lancar({ params, searchParams }: { params: Promise
           <form action={lancarGeracao} key={comp}>
             <input type="hidden" name="usina" value={id} />
             <input type="hidden" name="comp" value={comp} />
-            <div className="field"><label htmlFor="geracao">Geração de {mesAno(comp)} (kWh)</label><input id="geracao" name="geracao" required inputMode="decimal" defaultValue={atual ? campoDecimal(atual.geracao_wh / 1000, 3) : ""} placeholder="142.300" /></div>
-            <div className="field"><label htmlFor="receita">Receita a distribuir (R$)</label><input id="receita" name="receita" required inputMode="decimal" defaultValue={atual ? campoDecimal(atual.receita_centavos / 100, 2) : ""} placeholder="71.150" /></div>
+            <div className="field"><label htmlFor="geracao">Geração de {mesAno(comp)} (kWh)</label><input id="geracao" name="geracao" required inputMode="decimal" defaultValue={atual ? campoDecimal(atual.geracao_wh / 1000, 3) : ""} placeholder="142.300" />
+              <small>{u.geracao_esperada_wh ? `Esperado para esta usina: cerca de ${kwh(u.geracao_esperada_wh)} por mês. Abaixo de 85% disso, o sistema avisa.` : "Valor do aplicativo de monitoramento dos inversores, no mês inteiro."}</small></div>
+            <div className="field"><label htmlFor="receita">Receita a distribuir (R$)</label><input id="receita" name="receita" required inputMode="decimal" defaultValue={atual ? campoDecimal(atual.receita_centavos / 100, 2) : ""} placeholder="71.150" />
+              <small>O que vai ser dividido entre os cotistas pela cota de cada um, já descontados os custos da usina.</small></div>
             <button className="btn btn-gold">{atual ? "Salvar rascunho" : "Lançar"}</button>
           </form>
         )}

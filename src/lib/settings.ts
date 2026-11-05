@@ -17,6 +17,9 @@ export type Settings = {
   // Plus: projeção dos próximos meses no app do investidor (padrão desligado,
   // pelo mesmo cuidado da CVM: estimativa não pode parecer promessa de rendimento).
   projecaoApp: boolean;
+  // Prazo do repasse: até quantos dias depois de fechar o mês o Pix é feito (1 a 60).
+  // O investidor vê a data prevista; passou do prazo, a equipe vê como atrasado.
+  prazoRepasse: number;
   // Plus: agente de IA (painel e app). Padrão ligado; sem GROQ_API_KEY ele avisa que não está configurado.
   agente: boolean;
 };
@@ -28,6 +31,7 @@ export async function getSettings(): Promise<Settings> {
   const [row] = await sql<{ dados: Partial<Settings> }[]>`SELECT dados FROM configuracoes WHERE id = 1`;
   const d = row?.dados ?? {};
   const dia = Number(d.diaFechamento);
+  const prazo = Number(d.prazoRepasse);
   return {
     empresa: typeof d.empresa === "string" && d.empresa.trim() ? d.empresa.trim().slice(0, 40) : "HAV Energia",
     razaoSocial: typeof d.razaoSocial === "string" ? d.razaoSocial.trim().slice(0, 100) : "",
@@ -39,6 +43,7 @@ export async function getSettings(): Promise<Settings> {
     emailRelatorio: d.emailRelatorio !== false,
     projecaoApp: d.projecaoApp === true,
     agente: d.agente !== false,
+    prazoRepasse: Number.isInteger(prazo) && prazo >= 1 && prazo <= 60 ? prazo : 10,
   };
 }
 

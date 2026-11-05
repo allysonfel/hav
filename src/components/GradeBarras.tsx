@@ -9,21 +9,24 @@ import { brlCurto, kwhCurto, mesAbrev } from "@/lib/format";
 // Projeção em barra tracejada.
 export type Ponto = { comp: string; valor: number; proj?: boolean };
 
-export function GradeBarras({ itens, tipo, cabem, comUnidade, titulo }: {
+export function GradeBarras({ itens, tipo, cabem, comUnidade, titulo, meta }: {
   itens: Ponto[];
   tipo: "kwh" | "brl";
   cabem: number;
   comUnidade?: boolean;
   titulo: string;
+  // Geração esperada por mês: vira uma linha tracejada atravessando as barras.
+  meta?: number | null;
 }) {
   const rotulo = (v: number) => (tipo === "kwh" ? `${kwhCurto(v)}${comUnidade ? " kWh" : ""}` : brlCurto(v));
   const ultimoReal = itens.map((d) => !d.proj).lastIndexOf(true);
   const [sel, setSel] = useState(ultimoReal);
-  const max = Math.max(...itens.map((d) => d.valor), 1);
+  const max = Math.max(...itens.map((d) => d.valor), meta ? meta * 1.08 : 0, 1);
   const cada = Math.max(1, Math.ceil(itens.length / cabem));
   const mes = (d: Ponto) => `${mesAbrev(d.comp)}/${d.comp.slice(0, 4)}`;
   return (
-    <div className={`barras barras-${tipo}`} role="group" aria-label={`${titulo}: toque em um mês para ver o valor`}>
+    <div className={`barras barras-${tipo}`} role="group" aria-label={`${titulo}: toque em um mês para ver o valor${meta ? `; esperado ${rotulo(meta)} por mês` : ""}`}>
+      {meta ? <div className="barras-meta" style={{ bottom: `calc(22px + (100% - 44px) * ${meta / max})` }}><span>esperado</span></div> : null}
       {itens.map((d, i) => {
         const escolhido = i === sel;
         // Nome do mês embaixo só a cada N barras (não encavala); no escolhido sem nome embaixo, o mês vai junto do valor.

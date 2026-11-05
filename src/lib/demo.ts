@@ -73,8 +73,9 @@ export async function carregarDemo(adminId: number): Promise<void> {
 
     for (const u of USINAS) {
       const [us] = await tx<{ id: number }[]>`
-        INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento)
-        VALUES (${u.nome}, ${u.cidade}, ${u.uf}, ${u.kwp * 1000}, ${u.invest * 100}, ${u.status}, ${u.desde ? u.desde + "-01" : null}, ${u.marca}, ${u.modelo}, ${u.qtd}, ${u.mon})
+        INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh)
+        VALUES (${u.nome}, ${u.cidade}, ${u.uf}, ${u.kwp * 1000}, ${u.invest * 100}, ${u.status}, ${u.desde ? u.desde + "-01" : null}, ${u.marca}, ${u.modelo}, ${u.qtd}, ${u.mon},
+          ${u.status === "operando" ? u.kwp * 125_000 : null})
         RETURNING id`;
       await marca("usinas", us.id);
       const cotas = Object.entries(COTAS[u.nome]).map(([k, valor]) => ({ investidor: inv[k], valor, ppm: Math.round((valor / u.invest) * 1_000_000) }));

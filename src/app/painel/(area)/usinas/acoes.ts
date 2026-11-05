@@ -10,6 +10,7 @@ import { requireUser } from "@/lib/session";
 import { audit } from "@/lib/audit";
 import { COMPETENCIA, centavosDe, mesAno, mesAtual, mesLongo, ppmDe, whDe, wpDe } from "@/lib/format";
 import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
+import { COMPROVANTE_MAX, nomeSeguro, tipoComprovante } from "@/lib/comprovantes";
 
 const texto = (fd: FormData, campo: string, max: number) => String(fd.get(campo) ?? "").trim().replace(/\s+/g, " ").slice(0, max);
 const idDe = (v: unknown) => {
@@ -34,26 +35,29 @@ export async function salvarUsina(fd: FormData) {
   const modelo = texto(fd, "modelo", 60);
   const qtd = Number(fd.get("qtd") || 0);
   const monitoramento = texto(fd, "monitoramento", 120);
+  const esperadaTxt = String(fd.get("esperada") ?? "").trim();
+  const esperada = esperadaTxt ? whDe(esperadaTxt) : null;
   if (nome.length < 2) redirect(`${volta}?erro=nome`);
   if (uf && !/^[A-Z]{2}$/.test(uf)) redirect(`${volta}?erro=uf`);
   if (!capacidade) redirect(`${volta}?erro=capacidade`);
   if (!investimento) redirect(`${volta}?erro=investimento`);
   if (!Number.isInteger(qtd) || qtd < 0 || qtd > 100000) redirect(`${volta}?erro=qtd`);
+  if (esperadaTxt && !esperada) redirect(`${volta}?erro=esperada`);
   const [mesmoNome] = await sql`SELECT 1 FROM usinas WHERE nome = ${nome} AND id <> ${id}`;
   if (mesmoNome) redirect(`${volta}?erro=duplicada`);
 
   if (id) {
     const r = await sql`
       UPDATE usinas SET nome = ${nome}, cidade = ${cidade}, uf = ${uf}, capacidade_wp = ${capacidade}, investimento_centavos = ${investimento},
-        status = ${status}, operando_desde = ${desde}, inversor_marca = ${marca}, inversor_modelo = ${modelo}, inversor_qtd = ${qtd}, monitoramento = ${monitoramento}
+        status = ${status}, operando_desde = ${desde}, inversor_marca = ${marca}, inversor_modelo = ${modelo}, inversor_qtd = ${qtd}, monitoramento = ${monitoramento}, geracao_esperada_wh = ${esperada}
       WHERE id = ${id} RETURNING id`;
     if (!r.length) redirect("/painel/usinas");
     await audit(`usuario:${u.id}`, "usina_editada", "usina", id, nome);
     redirect(`/painel/usinas/${id}?ok=usina`);
   }
   const [n] = await sql<{ id: number }[]>`
-    INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento)
-    VALUES (${nome}, ${cidade}, ${uf}, ${capacidade}, ${investimento}, ${status}, ${desde}, ${marca}, ${modelo}, ${qtd}, ${monitoramento}) RETURNING id`;
+    INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh)
+    VALUES (${nome}, ${cidade}, ${uf}, ${capacidade}, ${investimento}, ${status}, ${desde}, ${marca}, ${modelo}, ${qtd}, ${monitoramento}, ${esperada}) RETURNING id`;
   await audit(`usuario:${u.id}`, "usina_criada", "usina", n.id, nome);
   redirect(`/painel/usinas/${n.id}?ok=usina`);
 }
@@ -207,6 +211,8 @@ export async function marcarRepasse(fd: FormData) {
     : await sql`
         UPDATE rateios SET repasse_status = 'pendente', pago_em = NULL, pago_por = NULL
         WHERE fechamento_id = ${fechamento} AND id = ${rateio} AND repasse_status = 'pago' RETURNING id, investidor_id`;
+  // Desfazer o pagamento tira também o comprovante, para o investidor não ver um Pix que não vale.
+  if (!pago && r.length) await sql`DELETE FROM comprovantes WHERE rateio_id = ${rateio}`;
   if (r.length) await audit(`usuario:${u.id}`, pago ? "repasse_pago" : "repasse_desfeito", "fechamento", fechamento, `${r.length} repasse(s)`);
   if (pago && r.length) {
     const [f] = await sql<{ usina: string; comp: string }[]>`
@@ -228,4 +234,39 @@ export async function reenviarEmail(fd: FormData) {
   await audit(`usuario:${u.id}`, "email_reenviado", "fechamento", id, inv ? `investidor ${inv}` : "falhas");
   after(() => processarFila());
   redirect(`/painel/fechamentos/${id}?ok=reenvio`);
+}
+
+// Comprovante do Pix de um repasse (imagem ou PDF, até 3 MB). Anexar num repasse
+// pendente já marca como pago e avisa o investidor; num pago, só troca o arquivo.
+export async function enviarComprovante(fd: FormData) {
+  const u = await requireUser(["admin"]);
+  const fechamento = idDe(fd.get("fechamento"));
+  const rateio = idDe(fd.get("rateio"));
+  const volta = `/painel/fechamentos/${fechamento}`;
+  const arq = fd.get("comprovante");
+  if (!fechamento || !rateio || !(arq instanceof File) || arq.size === 0) redirect(`${volta}?erro=comprovante`);
+  if (arq.size > COMPROVANTE_MAX) redirect(`${volta}?erro=comprovante_grande`);
+  const bytes = Buffer.from(await arq.arrayBuffer());
+  const mime = tipoComprovante(bytes);
+  if (!mime) redirect(`${volta}?erro=comprovante_tipo`);
+  const [r] = await sql<{ id: number; investidor_id: number; repasse_status: string }[]>`
+    SELECT id, investidor_id, repasse_status FROM rateios WHERE id = ${rateio} AND fechamento_id = ${fechamento}`;
+  if (!r) redirect(`${volta}?erro=nao_achou`);
+  await sql.begin(async (t) => {
+    await t`
+      INSERT INTO comprovantes (rateio_id, mime, nome, tamanho, conteudo, enviado_por)
+      VALUES (${rateio}, ${mime}, ${nomeSeguro(arq.name)}, ${bytes.length}, ${bytes}, ${u.id})
+      ON CONFLICT (rateio_id) DO UPDATE SET mime = excluded.mime, nome = excluded.nome, tamanho = excluded.tamanho,
+        conteudo = excluded.conteudo, enviado_por = excluded.enviado_por, criado_em = now()`;
+    if (r.repasse_status === "pendente") {
+      await t`UPDATE rateios SET repasse_status = 'pago', pago_em = now(), pago_por = ${u.id} WHERE id = ${rateio}`;
+      const [f] = await t<{ usina: string; comp: string }[]>`
+        SELECT us.nome AS usina, to_char(f.competencia, 'YYYY-MM') AS comp FROM fechamentos f JOIN usinas us ON us.id = f.usina_id WHERE f.id = ${fechamento}`;
+      await t`
+        INSERT INTO avisos_investidor (investidor_id, titulo, texto, href)
+        VALUES (${r.investidor_id}, ${`Repasse de ${mesLongo(f.comp)}`}, ${`${f.usina}: repasse pago. O comprovante está em Relatórios.`}, '/relatorios')`;
+    }
+  });
+  await audit(`usuario:${u.id}`, "comprovante_enviado", "rateio", rateio, r.repasse_status === "pendente" ? "e marcado como pago" : "trocado");
+  redirect(`${volta}?ok=comprovante`);
 }

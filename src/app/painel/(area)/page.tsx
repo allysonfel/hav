@@ -7,6 +7,8 @@ import { Historico, Kpi, PillUsina, Progresso } from "@/components/basicos";
 import { historicoUsinas } from "@/lib/historico";
 import { demoAtiva } from "@/lib/demo";
 import { alternarDemo } from "./configuracoes/acoes";
+import { MesAtual } from "@/components/MesAtual";
+import { relacaoEsperado, situacaoEsperado } from "@/lib/acompanhamento";
 
 export default async function VisaoGeral({ searchParams }: { searchParams: Promise<{ erro?: string; demo?: string; demo_erro?: string }> }) {
   const u = await requireUser();
@@ -52,6 +54,7 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Promi
       )}
       {demoMsg && <div className="aviso ok">{demoMsg === "ligada" ? "Dados de demonstração carregados." : "Dados de demonstração removidos."}</div>}
       {demo_erro && <div className="aviso erro">{demo_erro}</div>}
+      <MesAtual admin={admin} />
       <div className="kpi-row">
         <Kpi label="Usinas ativas" valor={num(operando.length)} delta={captacao.length ? `${captacao.length} em captação` : undefined} neutro />
         <Kpi label="Capacidade instalada" valor={kwp(capacidade)} delta={capCaptacao ? `+${kwp(capCaptacao)} em captação` : undefined} neutro />
@@ -82,14 +85,15 @@ export default async function VisaoGeral({ searchParams }: { searchParams: Promi
         <div className="section-head dentro"><h3>Usinas</h3><span className="hint">Último mês fechado de cada uma</span></div>
         <div className="tbl-wrap">
           <table className="dt">
-            <thead><tr><th>Usina</th><th>Capacidade</th><th>Geração</th><th>Receita</th><th>Mês</th><th>Status</th></tr></thead>
+            <thead><tr><th>Usina</th><th>Capacidade</th><th>Geração</th><th>Esperado</th><th>Receita</th><th>Mês</th><th>Status</th></tr></thead>
             <tbody>
-              {usinas.length === 0 && <tr><td colSpan={6} className="vazio">Nenhuma usina cadastrada. <Link className="link" href="/painel/usinas/nova">Cadastrar a primeira</Link></td></tr>}
+              {usinas.length === 0 && <tr><td colSpan={7} className="vazio">Nenhuma usina cadastrada. <Link className="link" href="/painel/usinas/nova">Cadastrar a primeira</Link></td></tr>}
               {usinas.map((x) => (
                 <tr key={x.id}>
                   <td><Link className="row-name" href={`/painel/usinas/${x.id}`}>{x.nome}</Link><div className="row-sub">{local(x)}</div></td>
                   <td className="num">{kwp(x.capacidade_wp)}</td>
                   <td className="num">{x.geracao_wh === null ? "—" : kwh(x.geracao_wh)}</td>
+                  <td>{(() => { const sit = situacaoEsperado(relacaoEsperado(x.geracao_wh, x.geracao_esperada_wh)); return sit ? <span className={`pill pill-sm ${sit.classe}`}>{sit.texto}</span> : <span className="muted">—</span>; })()}</td>
                   <td className="num">{x.receita_centavos === null ? "—" : brl0(x.receita_centavos)}</td>
                   <td className="muted">{x.comp ? mesAno(x.comp) : "—"}</td>
                   <td><PillUsina s={x.status} /></td>

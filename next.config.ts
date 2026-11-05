@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
   // (outro projeto do Railway), que repassa com o host do Railway. Libera
   // as server actions vindas do endereço público (APP_URL).
   experimental: {
-    serverActions: { bodySizeLimit: "2mb", allowedOrigins: hostPublico() },
+    serverActions: { bodySizeLimit: "4mb", allowedOrigins: hostPublico() },
   },
   // Cabeçalhos de segurança em todas as páginas. A CSP com nonce sai do proxy.ts.
   async headers() {

@@ -8,6 +8,7 @@ import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
 import { Historico, Kpi, PillUsina, Progresso, Retorno } from "@/components/basicos";
 import { historicoUsinas, periodoDe } from "@/lib/historico";
 import { removerCota, salvarCota } from "../acoes";
+import { relacaoEsperado, situacaoEsperado } from "@/lib/acompanhamento";
 
 const ERROS: Record<string, string> = {
   valor: "Informe o valor investido.",
@@ -23,9 +24,9 @@ export default async function Usina({ params, searchParams }: { params: Promise<
   const id = Number((await params).id);
   const sp = await searchParams;
   if (!Number.isInteger(id) || id < 1) notFound();
-  const [u] = await sql<{ id: number; nome: string; cidade: string; uf: string; capacidade_wp: number; investimento_centavos: number; status: StatusUsina; desde: string | null; inversor_marca: string; inversor_modelo: string; inversor_qtd: number; monitoramento: string }[]>`
+  const [u] = await sql<{ id: number; nome: string; cidade: string; uf: string; capacidade_wp: number; investimento_centavos: number; status: StatusUsina; desde: string | null; inversor_marca: string; inversor_modelo: string; inversor_qtd: number; monitoramento: string; geracao_esperada_wh: number | null }[]>`
     SELECT id, nome, cidade, uf, capacidade_wp, investimento_centavos, status, to_char(operando_desde, 'YYYY-MM') AS desde,
-      inversor_marca, inversor_modelo, inversor_qtd, monitoramento
+      inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh::float8 AS geracao_esperada_wh
     FROM usinas WHERE id = ${id}`;
   if (!u) notFound();
 
@@ -46,6 +47,8 @@ export default async function Usina({ params, searchParams }: { params: Promise<
   const investidores = admin ? await sql<{ id: number; nome: string }[]>`SELECT id, nome FROM investidores WHERE ativo ORDER BY nome` : [];
 
   const atual = serie[serie.length - 1];
+  const esperada = u.geracao_esperada_wh;
+  const sit = situacaoEsperado(relacaoEsperado(atual?.geracao_wh, esperada));
   const soma = somaPpm(cotas);
   const ppms = cotas.map((c) => c.cota_ppm);
   const prevGeracao = atual ? dividir(atual.geracao_wh, ppms) : [];
@@ -70,7 +73,8 @@ export default async function Usina({ params, searchParams }: { params: Promise<
         <div className="kpi-row" style={{ marginBottom: 18 }}>
           <Kpi label="Capacidade" valor={kwp(u.capacidade_wp)} />
           {verValores && <Kpi label={u.status === "captacao" ? "Meta" : "Investimento total"} valor={brl0(u.investimento_centavos)} />}
-          <Kpi label={atual ? `Geração (${mesAno(atual.comp)})` : "Geração"} valor={atual ? kwh(atual.geracao_wh) : "—"} />
+          <Kpi label={atual ? `Geração (${mesAno(atual.comp)})` : "Geração"} valor={atual ? kwh(atual.geracao_wh) : "—"}
+            delta={sit ? `${sit.abaixo ? "↓" : "✓"} ${sit.texto}` : esperada ? undefined : admin ? "Cadastre a geração esperada em Editar" : undefined} neutro={!sit || sit.abaixo} />
           <Kpi label="Receita distribuída" valor={atual ? brl0(atual.receita_centavos) : "—"} />
         </div>
         <div className="section-head" style={{ marginBottom: 10 }}>
@@ -80,7 +84,7 @@ export default async function Usina({ params, searchParams }: { params: Promise<
           </div>
         </div>
         <div className="two-col igual" style={{ marginBottom: 0 }}>
-          <Historico titulo="Geração mensal" sub={`kWh · últimos ${periodo} meses fechados`} dados={hist.real.map((s) => ({ comp: s.comp, valor: s.geracao_wh }))} projecao={hist.projGeracao} tipo="kwh" />
+          <Historico titulo="Geração mensal" sub={`kWh · últimos ${periodo} meses fechados`} dados={hist.real.map((s) => ({ comp: s.comp, valor: s.geracao_wh }))} projecao={hist.projGeracao} tipo="kwh" meta={esperada} />
           <Historico titulo="Receita distribuída" sub={`R$ · últimos ${periodo} meses fechados`} dados={hist.real.map((s) => ({ comp: s.comp, valor: s.receita_centavos }))} projecao={hist.projReceita} tipo="brl" />
         </div>
       </div>
@@ -147,13 +151,14 @@ export default async function Usina({ params, searchParams }: { params: Promise<
         <div className="section-head dentro"><h3>Lançamentos</h3><span className="hint">Últimos 12 meses</span></div>
         <div className="tbl-wrap">
           <table className="dt">
-            <thead><tr><th>Mês</th><th>Geração</th><th>Receita</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Mês</th><th>Geração</th>{esperada && <th>Esperado</th>}<th>Receita</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {fechamentos.length === 0 && <tr><td colSpan={5} className="vazio">Nenhum mês lançado.</td></tr>}
               {fechamentos.map((f) => (
                 <tr key={f.id}>
                   <td className="row-name">{mesAno(f.comp)}</td>
                   <td className="num">{kwh(f.geracao_wh)}</td>
+                  {esperada && <td><PillEsperado r={relacaoEsperado(f.geracao_wh, esperada)} /></td>}
                   <td className="num">{brl0(f.receita_centavos)}</td>
                   <td>
                     {f.status === "rascunho" ? <span className="pill pill-muted">Rascunho</span>
@@ -181,4 +186,9 @@ export default async function Usina({ params, searchParams }: { params: Promise<
       )}
     </>
   );
+}
+
+function PillEsperado({ r }: { r: number | null }) {
+  const s = situacaoEsperado(r);
+  return s ? <span className={`pill pill-sm ${s.classe}`}>{s.texto}</span> : <span className="muted">—</span>;
 }

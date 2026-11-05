@@ -45,7 +45,7 @@ export function Barras({ titulo, sub, dados, tipo }: {
 }
 
 // Histórico estendido (12 ou 24 meses) com a projeção dos próximos meses.
-export function Historico({ titulo, sub, dados, projecao, tipo, aviso, largura = 600 }: {
+export function Historico({ titulo, sub, dados, projecao, tipo, aviso, largura = 600, meta }: {
   titulo: string;
   sub: string;
   dados: { comp: string; valor: number }[];
@@ -54,20 +54,23 @@ export function Historico({ titulo, sub, dados, projecao, tipo, aviso, largura =
   aviso?: string;
   // Espaço para os nomes dos meses: 600 no painel; no app (celular), 340.
   largura?: number;
+  // Geração esperada por mês (Wh), desenhada como linha.
+  meta?: number | null;
 }) {
   const todos: Ponto[] = [...dados, ...projecao.map((d) => ({ ...d, proj: true }))];
   return (
     <div className="card bars-chart">
       <div className="ttl">
         <div><h3>{titulo}</h3><small>{sub}</small></div>
-        {projecao.length > 0 && (
+        {(projecao.length > 0 || !!meta) && (
           <div className={`legenda barras-${tipo}`}>
             <span><i className="leg-real" />Realizado</span>
-            <span><i className="tracejado" />Projeção</span>
+            {projecao.length > 0 && <span><i className="tracejado" />Projeção</span>}
+            {!!meta && <span><i className="leg-meta" />Esperado</span>}
           </div>
         )}
       </div>
-      {todos.length === 0 ? <div className="vazio">Sem meses fechados ainda.</div> : <GradeBarras itens={todos} tipo={tipo} cabem={Math.max(3, Math.floor(largura / 50))} comUnidade titulo={titulo} />}
+      {todos.length === 0 ? <div className="vazio">Sem meses fechados ainda.</div> : <GradeBarras itens={todos} tipo={tipo} cabem={Math.max(3, Math.floor(largura / 50))} comUnidade titulo={titulo} meta={meta} />}
       {projecao.length > 0 && (
         <p className="muted" style={{ fontSize: 12, margin: "10px 0 0" }}>
           {aviso ?? "Projeção simples a partir do histórico (mesmo mês do ano anterior ajustado pela tendência, ou média dos 3 últimos meses). É uma estimativa, não uma garantia."}

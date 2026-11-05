@@ -8,6 +8,7 @@ import { brl, brl0, dataBr, haQuanto, kwh, mesAno, pct } from "@/lib/format";
 import { Kpi, Retorno } from "@/components/basicos";
 import { lerSegredo } from "@/lib/segredo";
 import { ativarInvestidor, gerarAcesso } from "../acoes";
+import { pctTexto } from "@/lib/acompanhamento";
 
 const cpfFormatado = (d: string) => `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 
@@ -86,6 +87,13 @@ export default async function Investidor({ params, searchParams }: { params: Pro
         <Kpi label="Total investido" valor={brl0(investido)} />
         <Kpi label="Recebido" valor={brl0(recebido)} />
         <Kpi label="Repasse pendente" valor={brl(aReceber)} />
+        {(() => {
+          const meses = new Set(rateios.map((r) => r.comp)).size;
+          const total = recebido + aReceber;
+          return investido > 0 && meses > 0
+            ? <Kpi label="Retorno até agora" valor={pctTexto(total, investido)} delta={`média de ${pctTexto(total / meses, investido)} ao mês`} neutro />
+            : null;
+        })()}
       </div>
 
       <div className="card card-t">

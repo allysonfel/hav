@@ -16,11 +16,12 @@ export type MinhaUsina = {
   comp: string | null;
   geracao_wh: number | null;
   receita_centavos: number | null;
+  geracao_esperada_wh: number | null;
 };
 
 export function minhasUsinas(investidorId: number) {
   return sql<MinhaUsina[]>`
-    SELECT c.usina_id, u.nome, u.cidade, u.uf, u.status, u.capacidade_wp, to_char(u.operando_desde, 'YYYY-MM') AS desde,
+    SELECT c.usina_id, u.nome, u.cidade, u.uf, u.status, u.capacidade_wp, to_char(u.operando_desde, 'YYYY-MM') AS desde, u.geracao_esperada_wh,
       c.cota_ppm, c.valor_centavos, r.comp, r.geracao_wh, r.receita_centavos
     FROM cotas c JOIN usinas u ON u.id = c.usina_id
     LEFT JOIN LATERAL (
@@ -44,9 +45,10 @@ export async function minhaSerie(investidorId: number, meses = 6) {
 }
 
 export function meusRelatorios(investidorId: number) {
-  return sql<{ fechamento_id: number; usina_id: number; usina: string; comp: string; cota_ppm: number; geracao_wh: number; receita_centavos: number; repasse_status: string; fechado_em: Date }[]>`
+  return sql<{ fechamento_id: number; usina_id: number; usina: string; comp: string; cota_ppm: number; geracao_wh: number; receita_centavos: number; repasse_status: string; fechado_em: Date; pago_em: Date | null; comprovante: boolean }[]>`
     SELECT f.id AS fechamento_id, f.usina_id, u.nome AS usina, to_char(f.competencia, 'YYYY-MM') AS comp,
-      r.cota_ppm, r.geracao_wh, r.receita_centavos, r.repasse_status, f.fechado_em
+      r.cota_ppm, r.geracao_wh, r.receita_centavos, r.repasse_status, f.fechado_em, r.pago_em,
+      EXISTS (SELECT 1 FROM comprovantes c WHERE c.rateio_id = r.id) AS comprovante
     FROM rateios r JOIN fechamentos f ON f.id = r.fechamento_id JOIN usinas u ON u.id = f.usina_id
     WHERE r.investidor_id = ${investidorId} ORDER BY f.competencia DESC, u.nome`;
 }

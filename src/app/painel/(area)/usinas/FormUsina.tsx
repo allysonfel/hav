@@ -14,6 +14,7 @@ export type UsinaForm = {
   inversor_modelo: string;
   inversor_qtd: number;
   monitoramento: string;
+  geracao_esperada_wh: number | null;
 };
 
 export function FormUsina({ usina, status }: { usina?: UsinaForm; status?: string }) {
@@ -40,6 +41,11 @@ export function FormUsina({ usina, status }: { usina?: UsinaForm; status?: strin
           </select>
         </div>
         <div className="field"><label htmlFor="desde">Operando desde</label><input id="desde" name="desde" type="month" defaultValue={usina?.desde ?? ""} /></div>
+        <div className="field inteiro">
+          <label htmlFor="esperada">Geração esperada por mês (kWh, opcional)</label>
+          <input id="esperada" name="esperada" defaultValue={usina?.geracao_esperada_wh ? campoDecimal(usina.geracao_esperada_wh / 1000, 0) : ""} inputMode="decimal" placeholder="135.000" />
+          <small>Média mensal do projeto da usina. Com ela, o sistema mostra quanto do esperado a usina gerou e avisa quando ficar abaixo de 85%.</small>
+        </div>
       </div>
       <div className="box-title">Inversores e monitoramento</div>
       <div className="form-grid">
@@ -59,6 +65,7 @@ export const ERROS_USINA: Record<string, string> = {
   capacidade: "Informe a capacidade em kWp.",
   investimento: "Informe o investimento total.",
   qtd: "Confira a quantidade de inversores.",
+  esperada: "Confira a geração esperada por mês (em kWh, a partir de 1).",
   duplicada: "Já existe uma usina com esse nome.",
   movimento: "Esta usina tem cotistas, lançamentos ou interessados e não pode ser excluída. Use o status Pausada.",
 };

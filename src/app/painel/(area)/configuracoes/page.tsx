@@ -17,18 +17,20 @@ async function salvar(fd: FormData) {
   const cnpjTexto = String(fd.get("cnpj") ?? "").trim();
   const cnpj = cnpjTexto ? cnpjValido(cnpjTexto) : "";
   const diaFechamento = Number(fd.get("dia"));
+  const prazoRepasse = Number(fd.get("prazo"));
   let suporteWhatsapp = String(fd.get("whatsapp") ?? "").replace(/\D/g, "");
   if (suporteWhatsapp.length === 10 || suporteWhatsapp.length === 11) suporteWhatsapp = "55" + suporteWhatsapp;
   const suporteEmail = String(fd.get("email") ?? "").trim().toLowerCase().slice(0, 160);
   if (empresa.length < 2 || cnpj === null) redirect("/painel/configuracoes?erro=1");
   if (!Number.isInteger(diaFechamento) || diaFechamento < 0 || diaFechamento > 28) redirect("/painel/configuracoes?erro=1");
+  if (!Number.isInteger(prazoRepasse) || prazoRepasse < 1 || prazoRepasse > 60) redirect("/painel/configuracoes?erro=1");
   if (suporteWhatsapp && !/^\d{12,13}$/.test(suporteWhatsapp)) redirect("/painel/configuracoes?erro=1");
   if (suporteEmail && !EMAIL.test(suporteEmail)) redirect("/painel/configuracoes?erro=1");
   const oportunidades = fd.get("oportunidades") === "1";
   const emailRelatorio = fd.get("email_relatorio") === "1";
   const projecaoApp = fd.get("projecao_app") === "1";
   const agente = fd.get("agente") === "1";
-  await saveSettings({ empresa, razaoSocial, cnpj, diaFechamento, suporteWhatsapp, suporteEmail, oportunidades, emailRelatorio, projecaoApp, agente });
+  await saveSettings({ empresa, razaoSocial, cnpj, diaFechamento, prazoRepasse, suporteWhatsapp, suporteEmail, oportunidades, emailRelatorio, projecaoApp, agente });
   const lig = (b: boolean) => (b ? "ligada" : "desligada");
   await audit(`usuario:${u.id}`, "configuracoes_salvas", null, null,
     `oportunidades ${lig(oportunidades)}; email ${lig(emailRelatorio)}; projecao no app ${lig(projecaoApp)}; agente ${lig(agente)}`);
@@ -42,7 +44,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
   const demo = await demoAtiva();
   return (
     <>
-      <Retorno ok={sp.ok} erro={sp.erro} mapaOk={{ "1": "Configurações salvas." }} mapaErro={{ "1": "Confira os dados (CNPJ, WhatsApp ou e-mail inválido)." }} />
+      <Retorno ok={sp.ok} erro={sp.erro} mapaOk={{ "1": "Configurações salvas." }} mapaErro={{ "1": "Confira os dados (CNPJ, WhatsApp, e-mail ou prazo inválido)." }} />
       <form action={salvar} className="card card-p" style={{ maxWidth: 640 }}>
         <h4 style={{ margin: "0 0 14px" }}>Sistema</h4>
         <div className="field"><label htmlFor="empresa">Nome da empresa</label><input id="empresa" name="empresa" defaultValue={s.empresa} required maxLength={40} /></div>
@@ -55,6 +57,13 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
             {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => <option key={d} value={d}>Dia {d} do mês seguinte</option>)}
           </select>
           <small>Define quando o sino começa a cobrar o lançamento do mês.</small>
+        </div>
+        <div className="field">
+          <label htmlFor="prazo">Prazo para pagar os repasses</label>
+          <select id="prazo" name="prazo" defaultValue={s.prazoRepasse}>
+            {[3, 5, 7, 10, 15, 20, 30, 45, 60].concat([s.prazoRepasse]).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b).map((d) => <option key={d} value={d}>Até {d} dias depois de fechar o mês</option>)}
+          </select>
+          <small>O investidor vê no app a data prevista do repasse. Passou do prazo, o repasse aparece como atrasado para a equipe.</small>
         </div>
         <div className="field"><label htmlFor="whatsapp">WhatsApp de atendimento ao investidor</label><input id="whatsapp" name="whatsapp" defaultValue={s.suporteWhatsapp} maxLength={18} inputMode="tel" /></div>
         <div className="field"><label htmlFor="email">E-mail de atendimento ao investidor</label><input id="email" name="email" type="email" defaultValue={s.suporteEmail} maxLength={160} /></div>

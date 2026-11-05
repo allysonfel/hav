@@ -213,6 +213,23 @@ CREATE TABLE IF NOT EXISTS demo_registros (
   id BIGINT NOT NULL,
   PRIMARY KEY (tabela, id)
 );
+
+-- Geração esperada da usina por mês (média do projeto). Serve para comparar o
+-- real com o esperado e avisar quando a usina rende menos. Opcional.
+ALTER TABLE usinas ADD COLUMN IF NOT EXISTS geracao_esperada_wh BIGINT CHECK (geracao_esperada_wh IS NULL OR geracao_esperada_wh > 0);
+
+-- Comprovante do Pix de um repasse (imagem ou PDF, até 3 MB). Um por repasse;
+-- o tipo é conferido pelos primeiros bytes. Desfazer o pagamento apaga.
+CREATE TABLE IF NOT EXISTS comprovantes (
+  id SERIAL PRIMARY KEY,
+  rateio_id INT NOT NULL UNIQUE REFERENCES rateios(id) ON DELETE CASCADE,
+  mime TEXT NOT NULL CHECK (mime IN ('image/jpeg', 'image/png', 'image/webp', 'application/pdf')),
+  nome TEXT NOT NULL DEFAULT '' CHECK (length(nome) <= 120),
+  tamanho INT NOT NULL CHECK (tamanho > 0 AND tamanho <= 3145728),
+  conteudo BYTEA NOT NULL,
+  enviado_por INT REFERENCES usuarios(id),
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;
 
 let pronto: Promise<void> | null = null;

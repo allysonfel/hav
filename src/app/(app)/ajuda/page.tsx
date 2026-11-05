@@ -4,7 +4,10 @@ import { getSettings } from "@/lib/settings";
 const FAQ: [string, string][] = [
   ["Como minha receita é calculada?", "A equipe lança a geração e a receita de cada usina no mês. Ao fechar o mês, você recebe a parte proporcional à sua cota."],
   ["Quando vejo o mês novo?", "Depois que a equipe fechar o mês. Antes disso os números ainda podem mudar e não aparecem aqui."],
-  ["O que quer dizer repasse pendente?", "O valor já foi calculado, mas o pagamento ainda não foi registrado pela equipe."],
+  ["O que quer dizer repasse pendente?", "O valor já foi calculado, mas o pagamento ainda não foi registrado pela equipe. No Início e em Relatórios aparece a data prevista do repasse."],
+  ["Onde vejo o comprovante do Pix?", "Em Relatórios. Quando a equipe anexa o comprovante, aparece \"ver comprovante\" ao lado de \"Repasse pago\"."],
+  ["O que é \"% do valor investido\"?", "É quanto a receita do mês representa sobre o que você investiu. Em \"Seu retorno até agora\" você vê quanto já recebeu no total e quanto do valor investido já voltou. São números dos meses já fechados, não uma promessa de rendimento."],
+  ["O que é \"% do esperado\"?", "Cada usina tem uma geração esperada por mês, do projeto. O número mostra quanto ela gerou em relação a isso. Abaixo de 85% aparece em amarelo: pode ser chuva, nuvens ou manutenção, e a equipe acompanha."],
   ["Onde informo minha chave Pix?", "Em Perfil, Dados bancários para repasse. A troca pede a sua senha."],
   ["Como baixo o relatório em PDF?", "Em Relatórios, toque em PDF no mês que quiser. A planilha continua disponível ao lado."],
   ["Recebo o relatório por e-mail?", "Sim, quando a equipe fecha o mês, o PDF chega no seu e-mail cadastrado. Para ligar ou desligar, vá em Perfil, Notificações."],

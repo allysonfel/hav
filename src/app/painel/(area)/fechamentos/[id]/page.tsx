@@ -5,7 +5,9 @@ import { sql } from "@/lib/db";
 import { brl, kwh, dataBr, mesLongo, pct } from "@/lib/format";
 import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
 import { Kpi, Retorno } from "@/components/basicos";
-import { fecharMes, marcarRepasse, reabrirMes, reenviarEmail } from "../../usinas/acoes";
+import { enviarComprovante, fecharMes, marcarRepasse, reabrirMes, reenviarEmail } from "../../usinas/acoes";
+import { atrasado, previsaoRepasse, relacaoEsperado, situacaoEsperado } from "@/lib/acompanhamento";
+import { AnexarComprovante } from "@/components/AnexarComprovante";
 import { STATUS_ENVIO, enviosDoFechamento } from "@/lib/envios";
 import { getSettings } from "@/lib/settings";
 
@@ -14,6 +16,9 @@ const ERROS: Record<string, string> = {
   ja_fechado: "Este mês já estava fechado.",
   tem_pago: "Há repasses marcados como pagos. Desfaça-os antes de reabrir.",
   nao_achou: "Lançamento não encontrado.",
+  comprovante: "Escolha o arquivo do comprovante.",
+  comprovante_grande: "O comprovante passa de 3 MB. Mande um print ou o PDF do banco.",
+  comprovante_tipo: "O comprovante precisa ser imagem (JPG, PNG ou WebP) ou PDF.",
 };
 const OK: Record<string, string> = {
   lancado: "Lançamento salvo como rascunho.",
@@ -21,6 +26,7 @@ const OK: Record<string, string> = {
   reaberto: "Mês reaberto para correção.",
   repasse: "Repasse atualizado.",
   reenvio: "E-mail colocado na fila de novo.",
+  comprovante: "Comprovante anexado. O investidor já pode baixar no app.",
 };
 
 export default async function Fechamento({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string }> }) {
@@ -29,18 +35,19 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
   const id = Number((await params).id);
   const sp = await searchParams;
   if (!Number.isInteger(id) || id < 1) notFound();
-  const [f] = await sql<{ id: number; usina_id: number; usina: string; comp: string; geracao_wh: number; receita_centavos: number; status: string; fechado_em: Date | null; quem: string | null }[]>`
-    SELECT f.id, f.usina_id, u.nome AS usina, to_char(f.competencia, 'YYYY-MM') AS comp, f.geracao_wh, f.receita_centavos, f.status, f.fechado_em, q.nome AS quem
+  const [f] = await sql<{ id: number; usina_id: number; usina: string; comp: string; geracao_wh: number; receita_centavos: number; status: string; fechado_em: Date | null; quem: string | null; esperada: number | null }[]>`
+    SELECT f.id, f.usina_id, u.nome AS usina, u.geracao_esperada_wh AS esperada, to_char(f.competencia, 'YYYY-MM') AS comp, f.geracao_wh, f.receita_centavos, f.status, f.fechado_em, q.nome AS quem
     FROM fechamentos f JOIN usinas u ON u.id = f.usina_id LEFT JOIN usuarios q ON q.id = f.fechado_por
     WHERE f.id = ${id}`;
   if (!f) notFound();
   const fechado = f.status === "fechado";
 
-  type Linha = { id: number; investidor_id: number; nome: string; cota_ppm: number; geracao_wh: number; receita_centavos: number; repasse_status: string; pago_em: Date | null };
+  type Linha = { id: number; investidor_id: number; nome: string; cota_ppm: number; geracao_wh: number; receita_centavos: number; repasse_status: string; pago_em: Date | null; comprovante: boolean };
   let linhas: Linha[];
   if (fechado) {
     linhas = [...await sql<Linha[]>`
-      SELECT r.id, r.investidor_id, i.nome, r.cota_ppm, r.geracao_wh, r.receita_centavos, r.repasse_status, r.pago_em
+      SELECT r.id, r.investidor_id, i.nome, r.cota_ppm, r.geracao_wh, r.receita_centavos, r.repasse_status, r.pago_em,
+        EXISTS (SELECT 1 FROM comprovantes c WHERE c.rateio_id = r.id) AS comprovante
       FROM rateios r JOIN investidores i ON i.id = r.investidor_id
       WHERE r.fechamento_id = ${id} ORDER BY r.cota_ppm DESC, i.nome`];
   } else {
@@ -52,7 +59,7 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
     const soma100 = somaPpm(cotas) === PPM_TOTAL;
     const g = soma100 ? dividir(f.geracao_wh, ppms) : ppms.map(() => 0);
     const r = soma100 ? dividir(f.receita_centavos, ppms) : ppms.map(() => 0);
-    linhas = cotas.map((c, i) => ({ id: 0, investidor_id: c.investidor_id, nome: c.nome, cota_ppm: c.cota_ppm, geracao_wh: g[i], receita_centavos: r[i], repasse_status: "", pago_em: null }))
+    linhas = cotas.map((c, i) => ({ id: 0, investidor_id: c.investidor_id, nome: c.nome, cota_ppm: c.cota_ppm, geracao_wh: g[i], receita_centavos: r[i], repasse_status: "", pago_em: null, comprovante: false }))
       .sort((a, b) => b.cota_ppm - a.cota_ppm);
   }
   const pendentes = linhas.filter((l) => l.repasse_status === "pendente").length;
@@ -61,6 +68,9 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
   const comEmail = fechado && envios.size > 0;
   const falhas = [...envios.values()].filter((e) => e.status === "falhou" || e.status === "simulado").length;
   const soma = somaPpm(linhas);
+  const prevista = previsaoRepasse(f.fechado_em, s.prazoRepasse);
+  const emAtraso = atrasado(prevista, pendentes ? "pendente" : "pago");
+  const sit = situacaoEsperado(relacaoEsperado(f.geracao_wh, f.esperada));
 
   return (
     <>
@@ -84,12 +94,15 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
       </div>
 
       <div className="kpi-row" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
-        <Kpi label="Geração" valor={kwh(f.geracao_wh)} />
+        <Kpi label="Geração" valor={kwh(f.geracao_wh)} delta={sit ? `${sit.abaixo ? "↓" : "✓"} ${sit.texto}` : undefined} neutro={!sit || sit.abaixo} />
         <Kpi label="Receita a distribuir" valor={brl(f.receita_centavos)} />
         <Kpi label="Cotistas" valor={String(linhas.length)} delta={`${pct(soma)} distribuídos`} neutro />
       </div>
 
-      {!fechado && <div className="aviso info">Prévia com as cotas de hoje. {admin ? "Ao fechar, os valores ficam gravados e entram nos relatórios." : "Quem fecha o mês é o administrador."}</div>}
+      {/* Próximo passo, em uma frase: o que fazer agora neste mês. */}
+      {!fechado && <div className="aviso info"><b>Próximo passo:</b>&nbsp;{admin ? "confira o rateio abaixo (prévia com as cotas de hoje) e clique em Fechar mês. Depois de fechado, o investidor vê o mês no app e recebe o relatório." : "o administrador confere e fecha o mês. Se algum valor estiver errado, use Corrigir lançamento."}</div>}
+      {fechado && pendentes > 0 && admin && <div className={`aviso ${emAtraso ? "erro" : "info"}`}><b>Próximo passo:</b>&nbsp;faça o Pix de cada cotista e anexe o comprovante (ou use Marcar pago). {prevista ? (emAtraso ? `O prazo era ${dataBr(prevista)}.` : `Previsto até ${dataBr(prevista)}.`) : ""}</div>}
+      {fechado && pendentes === 0 && linhas.length > 0 && <div className="aviso ok">Mês concluído: rateio fechado e todos os repasses pagos.</div>}
       {!fechado && soma !== PPM_TOTAL && <div className="aviso erro">As cotas somam {pct(soma)}. Sem 100% exatos, não dá para calcular o rateio nem fechar.</div>}
 
       <div className="card card-t">
@@ -114,7 +127,9 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
                   <td className="num">{pct(l.cota_ppm)}</td>
                   <td className="num">{kwh(l.geracao_wh)}</td>
                   <td className="num">{brl(l.receita_centavos)}</td>
-                  {fechado && <td>{l.repasse_status === "pago" ? <span className="pill pill-ok">Pago{l.pago_em ? ` em ${dataBr(l.pago_em)}` : ""}</span> : <span className="pill pill-warn">Pendente</span>}</td>}
+                  {fechado && <td>{l.repasse_status === "pago"
+                    ? <><span className="pill pill-ok">Pago{l.pago_em ? ` em ${dataBr(l.pago_em)}` : ""}</span>{l.comprovante && admin && <a className="link sm" style={{ marginLeft: 8 }} href={`/painel/comprovantes/${l.id}`} target="_blank" rel="noopener">Comprovante</a>}</>
+                    : emAtraso ? <span className="pill pill-atraso">Atrasado</span> : <span className="pill pill-warn">Pendente{prevista ? ` · até ${dataBr(prevista).slice(0, 5)}` : ""}</span>}</td>}
                   {comEmail && <td><EnvioPill e={envios.get(l.investidor_id)} /></td>}
                   {fechado && (
                     <td className="acoes"><div className="linha">
@@ -126,6 +141,7 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
                           <button className="btn btn-ghost btn-sm">Reenviar</button>
                         </form>
                       )}
+                      {admin && <AnexarComprovante acao={enviarComprovante} fechamento={id} rateio={l.id} rotulo={l.repasse_status === "pago" ? (l.comprovante ? "Trocar comprovante" : "Anexar comprovante") : "Pagar com comprovante"} />}
                       {admin && <form action={marcarRepasse}>
                         <input type="hidden" name="fechamento" value={id} />
                         <input type="hidden" name="rateio" value={l.id} />
