@@ -252,12 +252,21 @@ a.row-name:hover { text-decoration: underline; }
 .segredo { font-family: ui-monospace, Consolas, monospace; font-size: 16px; background: var(--bg); padding: 10px 12px; border-radius: 8px; user-select: all; }
 
 /* ---- app do investidor ---- */
-.inv-login { display: flex; flex-direction: column; min-height: 100dvh; max-width: 480px; margin: 0 auto; background: linear-gradient(170deg, var(--navy) 0%, #122c48 70%); }
-.inv-login-top { padding: 54px 26px 30px; text-align: center; }
-.inv-login-top img { width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 14px; background: #fff; padding: 3px; }
-.inv-login-top h1 { color: #fff; font-size: 19px; margin: 0 0 4px; }
-.inv-login-top p { color: #b7c6d8; font-size: 12.5px; margin: 0; }
-.inv-login-sheet { background: var(--surface); border-radius: 22px 22px 0 0; padding: 26px 22px 34px; margin-top: auto; }
+.inv-login { display: flex; flex-direction: column; min-height: 100dvh; max-width: 480px; margin: 0 auto; background: linear-gradient(170deg, var(--navy) 0%, #122c48 70%); position: relative; overflow: hidden; }
+.inv-login:before { content: ""; position: absolute; right: -150px; top: -120px; width: 380px; height: 380px; border-radius: 50%; border: 1px solid rgba(240,169,58,.22); box-shadow: 0 0 0 60px rgba(240,169,58,.035); pointer-events: none; }
+.inv-login-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 28px 36px; text-align: center; position: relative; }
+.inv-login-top img { width: 84px; height: 84px; margin: 0 auto 18px; border-radius: 20px; background: #fff; padding: 4px; box-shadow: 0 14px 34px -12px rgba(0,0,0,.45); }
+.inv-login-top h1 { color: #fff; font-size: 24px; margin: 0 0 6px; }
+.inv-login-top p { color: var(--gold); font-size: 13.5px; font-weight: 600; margin: 0; }
+.inv-login-top .inv-login-texto { color: #c3d0de; font-weight: 400; font-size: 14px; line-height: 1.55; max-width: 300px; margin-top: 18px; }
+.inv-login-sheet { background: var(--surface); border-radius: 24px 24px 0 0; padding: 26px 22px 34px; position: relative; box-shadow: 0 -18px 40px -24px rgba(0,0,0,.5); }
+@media (min-width: 640px) {
+  html:has(.inv-login) { background: linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 60%, #122c48 100%) fixed; }
+  body:has(.inv-login) { background: transparent; min-height: 100dvh; display: flex; align-items: center; }
+  .inv-login { min-height: 0; width: 420px; margin: 24px auto; border-radius: 24px; box-shadow: 0 40px 80px -30px rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.06); }
+  .inv-login-top { padding: 44px 32px 32px; }
+  .inv-login-sheet { border-radius: 24px; padding: 28px 28px 30px; }
+}
 .inv-tabs { display: flex; gap: 4px; background: var(--soft); border-radius: 10px; padding: 3px; margin-bottom: 18px; }
 .inv-tabs a { flex: 1; text-align: center; padding: 8px 4px; border-radius: 8px; font-size: 11.5px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; text-decoration: none; }
 .inv-tabs a.active { background: var(--surface); color: var(--accent-ink); box-shadow: 0 1px 3px rgba(20,30,50,.12); }
