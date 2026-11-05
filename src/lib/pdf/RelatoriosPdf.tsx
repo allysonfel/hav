@@ -3,9 +3,9 @@
 // acentos do português), sem arquivo de fonte para carregar.
 import path from "node:path";
 import { readFileSync } from "node:fs";
-import { Document, Image, Page, Rect, StyleSheet, Svg, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Image, Line, Page, Polyline, Rect, StyleSheet, Svg, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { cnpjFormatado } from "../cpf";
-import { brl, dataBr, kwh, kwp, mesAbrev, mesLongo, num, pct, periodo, periodoTexto, receitaPorTarifa, tarifaTxt } from "../format";
+import { brl, brl0, dataBr, kwh, kwp, mesAbrev, mesLongo, num, pct, periodo, periodoTexto, receitaPorTarifa, tarifaTxt } from "../format";
 import { previsaoRepasse } from "../acompanhamento";
 import type { RelatorioFechamento, RelatorioInvestidor } from "../relatorios";
 import type { Settings } from "../settings";
@@ -14,19 +14,19 @@ import type { Settings } from "../settings";
 // (a pasta do projeto pode ficar em C:/Users/André/...).
 let logo: { data: Buffer; format: "png" } | null = null;
 const LOGO = () => (logo ??= { data: readFileSync(path.join(process.cwd(), "public", "logo-hav.png")), format: "png" });
-const C = { navy: "#0f2742", navy3: "#1d3c5c", gold: "#f0a93a", goldBar: "#d4870f", ink: "#142033", muted: "#5c6b7c", faint: "#8894a1", line: "#e3e7ec", bg: "#f5f7f9", ok: "#1f9d55", okBg: "#e9f8ef", warn: "#c77e12", warnBg: "#fff4e2" };
+const C = { navy: "#0f2742", navy3: "#1d3c5c", gold: "#f0a93a", goldBar: "#d4870f", ink: "#142033", muted: "#364353", faint: "#4f5b69", line: "#d9dfe6", grade: "#e4e8ee", bg: "#f5f7f9", ok: "#1f9d55", okBg: "#e9f8ef", warn: "#c77e12", warnBg: "#fff4e2" };
 
 const s = StyleSheet.create({
-  page: { fontFamily: "Helvetica", fontSize: 9.5, color: C.ink, paddingBottom: 54, lineHeight: 1.4 },
+  page: { fontFamily: "Helvetica", fontSize: 9.5, color: C.ink, paddingBottom: 66, lineHeight: 1.4 },
   topo: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 36, paddingTop: 22, paddingBottom: 10 },
   logo: { width: 112, height: 57 },
   topoDir: { alignItems: "flex-end" },
-  tipo: { fontSize: 8, color: C.faint, letterSpacing: 1.2 },
+  tipo: { fontSize: 8, color: C.muted, letterSpacing: 1.2, fontFamily: "Helvetica-Bold" },
   titulo: { fontSize: 15, fontFamily: "Helvetica-Bold", color: C.navy, marginTop: 3 },
   faixa: { height: 5, backgroundColor: C.navy, flexDirection: "row" },
   faixaOuro: { width: 90, backgroundColor: C.gold },
   corpo: { paddingHorizontal: 36, paddingTop: 18 },
-  para: { fontSize: 9, color: C.muted, marginBottom: 2 },
+  para: { fontSize: 9.5, color: C.ink, marginBottom: 2 },
   nome: { fontSize: 12, fontFamily: "Helvetica-Bold", marginBottom: 14 },
   hero: { backgroundColor: C.navy, borderRadius: 10, padding: 16, marginBottom: 14, flexDirection: "row", justifyContent: "space-between" },
   heroLbl: { fontSize: 7.5, color: "#b7c6d8", letterSpacing: 0.8, marginBottom: 4 },
@@ -35,19 +35,21 @@ const s = StyleSheet.create({
   cards: { flexDirection: "row", marginBottom: 14 },
   card: { flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 8, padding: 10, marginRight: 8 },
   cardUlt: { marginRight: 0 },
-  cardLbl: { fontSize: 7.5, color: C.muted, marginBottom: 3 },
-  cardValor: { fontSize: 11.5, fontFamily: "Helvetica-Bold" },
-  secao: { fontSize: 8, color: C.faint, letterSpacing: 1, marginTop: 6, marginBottom: 8, fontFamily: "Helvetica-Bold" },
+  cardLbl: { fontSize: 8, color: C.muted, marginBottom: 3, fontFamily: "Helvetica-Bold" },
+  cardValor: { fontSize: 11.5, fontFamily: "Helvetica-Bold", color: C.navy },
+  secao: { fontSize: 13, color: C.navy, marginTop: 8, marginBottom: 6, fontFamily: "Helvetica-Bold" },
+  subTit: { fontSize: 8, color: C.muted, letterSpacing: 0.8, fontFamily: "Helvetica-Bold", textAlign: "center" },
+  bullet: { fontSize: 9.5, marginBottom: 1.5, paddingLeft: 6 },
   tab: { borderWidth: 1, borderColor: C.line, borderRadius: 8, marginBottom: 14 },
   th: { flexDirection: "row", backgroundColor: C.bg, borderBottomWidth: 1, borderBottomColor: C.line, paddingVertical: 6, paddingHorizontal: 8 },
   tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.line, paddingVertical: 5, paddingHorizontal: 8 },
   trUlt: { borderBottomWidth: 0 },
-  thTxt: { fontSize: 7.5, color: C.muted, fontFamily: "Helvetica-Bold" },
+  thTxt: { fontSize: 7.5, color: C.ink, fontFamily: "Helvetica-Bold" },
   dir: { textAlign: "right" },
   pillOk: { color: C.ok, fontFamily: "Helvetica-Bold" },
   pillWarn: { color: C.warn, fontFamily: "Helvetica-Bold" },
-  nota: { fontSize: 7.5, color: C.faint, marginTop: 4, lineHeight: 1.45 },
-  rodape: { position: "absolute", bottom: 20, left: 36, right: 36, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 7, flexDirection: "row", justifyContent: "space-between", fontSize: 7.5, color: C.faint },
+  nota: { fontSize: 8, color: C.muted, marginTop: 4, lineHeight: 1.45 },
+  rodape: { position: "absolute", bottom: 16, left: 36, right: 36, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 6, alignItems: "center", fontSize: 7.5, color: C.muted, lineHeight: 1.35 },
 });
 
 function Topo({ tipo, titulo }: { tipo: string; titulo: string }) {
@@ -66,12 +68,20 @@ function Topo({ tipo, titulo }: { tipo: string; titulo: string }) {
   );
 }
 
-function Rodape({ e, emitido }: { e: Settings; emitido: string }) {
-  const contato = [e.suporteEmail, e.suporteWhatsapp && `WhatsApp +${e.suporteWhatsapp}`].filter(Boolean).join(" · ");
+// Rodapé do relatório que a HAV fazia: nome e slogan, sede, CNPJ e contatos.
+const fone = (w: string) => {
+  const d = w.startsWith("55") ? w.slice(2) : w;
+  return d.length >= 10 ? `(${d.slice(0, 2)}) ${d.slice(2, -4)}-${d.slice(-4)}` : w;
+};
+function Rodape({ e }: { e: Settings; emitido?: string }) {
+  const nome = (e.razaoSocial || e.empresa).toUpperCase();
+  const l2 = [e.endereco, e.cnpj && `CNPJ ${cnpjFormatado(e.cnpj)}`, e.suporteWhatsapp && `Telefone / WhatsApp: ${fone(e.suporteWhatsapp)}`].filter(Boolean).join("  |  ");
+  const l3 = [e.suporteEmail && `E-mail: ${e.suporteEmail}`, e.instagram && `Instagram: ${e.instagram}`].filter(Boolean).join("  |  ");
   return (
     <View style={s.rodape} fixed>
-      <Text style={{ flex: 1 }}>{[e.razaoSocial || e.empresa, e.cnpj && `CNPJ ${cnpjFormatado(e.cnpj)}`].filter(Boolean).join(" · ")}{contato ? ` · ${contato}` : ""}</Text>
-      <Text>Emitido em {emitido}</Text>
+      <Text><Text style={{ fontFamily: "Helvetica-Bold", color: C.ink }}>{nome}</Text>{e.slogan ? `  |  ${e.slogan}` : ""}</Text>
+      {l2 ? <Text>{l2}</Text> : null}
+      {l3 ? <Text>{l3}</Text> : null}
     </View>
   );
 }
@@ -84,50 +94,67 @@ function Repasse({ status, pago }: { status: string; pago: Date | null }) {
   return status === "pago" ? <Text style={s.pillOk}>Pago{pago ? ` em ${dataBr(pago)}` : ""}</Text> : <Text style={s.pillWarn}>Pendente</Text>;
 }
 
-// Barras da receita do investidor nos últimos meses (mesmo dourado do app; o mês do relatório em azul).
-function Grafico({ dados }: { dados: { comp: string; receita_centavos: number }[] }) {
-  const W = 523, H = 84, base = 70;
-  const max = Math.max(...dados.map((d) => d.receita_centavos), 1);
-  const passo = W / Math.max(dados.length, 6);
-  const larg = Math.min(30, passo * 0.6);
-  return (
-    <View style={{ marginBottom: 14 }}>
-      <Svg width={W} height={H}>
-        <Rect x={0} y={base} width={W} height={0.8} fill={C.line} />
-        {dados.map((d, i) => {
-          const h = Math.max(2, (d.receita_centavos / max) * 60);
-          return <Rect key={d.comp} x={passo * i + (passo - larg) / 2} y={base - h} width={larg} height={h} rx={3} fill={i === dados.length - 1 ? C.navy : C.gold} />;
-        })}
-      </Svg>
-      <View style={{ flexDirection: "row", marginTop: -9 }}>
-        {dados.map((d) => <Text key={d.comp} style={{ width: passo, textAlign: "center", fontSize: 7, color: C.faint }}>{mesAbrev(d.comp)}/{d.comp.slice(2, 4)}</Text>)}
-      </View>
-    </View>
-  );
+// Escala "redonda" para o eixo: até 5 linhas de grade com passos 1, 2, 2,5 ou 5.
+function escala(max: number, linhas = 4) {
+  if (max <= 0) return { topo: 1, passo: 0.25 };
+  const bruto = max / linhas;
+  const p10 = 10 ** Math.floor(Math.log10(bruto));
+  const passo = [1, 2, 2.5, 5, 10].map((m) => m * p10).find((v) => v >= bruto) ?? 10 * p10;
+  return { topo: passo * Math.ceil(max / passo - 1e-9), passo };
 }
 
-// Comparativo do relatório: o retorno do período sobre o mesmo valor investido.
-function Comparativo({ itens }: { itens: { nome: string; valor: number; cor: string }[] }) {
-  const W = 523, H = 76, base = 72;
-  const max = Math.max(...itens.map((i) => i.valor), 1);
-  const passo = W / itens.length;
-  const larg = Math.min(70, passo * 0.55);
+type Serie = { valores: number[]; cor: string; fmt: (v: number) => string; titulo: string };
+
+// Gráfico com eixo à esquerda (barras) e, se houver, à direita (linha), linhas de
+// grade e o nome de cada coluna embaixo, como o gráfico de monitoramento do
+// relatório da HAV. Rótulos de valor em cima das barras são opcionais.
+function GraficoEixos({ rotulos, barras, linha, altura = 150, valorNaBarra, destaqueUltima, cada = 1, cores }: {
+  rotulos: string[]; barras: Serie; linha?: Serie; altura?: number; valorNaBarra?: boolean; destaqueUltima?: boolean; cada?: number; cores?: string[];
+}) {
+  const W = 523, E = 50, D = linha ? 50 : 8, T = valorNaBarra ? 16 : 8, B = 20;
+  const pw = W - E - D, ph = altura - T - B;
+  const n = Math.max(rotulos.length, 1), passo = pw / n, larg = Math.min(60, passo * 0.62);
+  const eb = escala(Math.max(...barras.valores, 0));
+  const nt = Math.round(eb.topo / eb.passo);
+  // O eixo da direita usa o mesmo número de linhas de grade do da esquerda.
+  const topoL = linha ? escala(Math.max(...linha.valores, 0), nt).passo * nt : 1;
+  const yb = (v: number) => T + ph - (v / eb.topo) * ph;
+  const yl = (v: number) => T + ph - (v / topoL) * ph;
+  const ticks = Array.from({ length: nt + 1 }, (_, i) => i);
+  const yt = (i: number) => T + ph - (i / nt) * ph;
+  const lbl = { position: "absolute" as const, fontSize: 7, color: C.muted };
   return (
-    <View style={{ marginBottom: 6 }}>
-      <Svg width={W} height={H}>
-        <Rect x={0} y={base} width={W} height={0.8} fill={C.line} />
-        {itens.map((it, i) => {
-          const h = Math.max(2, (it.valor / max) * 64);
-          return <Rect key={it.nome} x={passo * i + (passo - larg) / 2} y={base - h} width={larg} height={h} rx={3} fill={it.cor} />;
-        })}
-      </Svg>
-      <View style={{ flexDirection: "row", marginTop: 4 }}>
-        {itens.map((it) => (
-          <View key={it.nome} style={{ width: passo, alignItems: "center" }}>
-            <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold" }}>{brl(it.valor)}</Text>
-            <Text style={{ fontSize: 7.5, color: C.muted }}>{it.nome}</Text>
+    <View style={{ marginBottom: 10 }} wrap={false}>
+      <View style={{ width: W, height: altura, position: "relative" }}>
+        <Svg width={W} height={altura} style={{ position: "absolute", top: 0, left: 0 }}>
+          {ticks.map((i) => <Line key={i} x1={E} x2={W - D} y1={yt(i)} y2={yt(i)} stroke={i === 0 ? C.faint : C.grade} strokeWidth={i === 0 ? 0.8 : 0.6} />)}
+          <Line x1={E} x2={E} y1={T} y2={T + ph} stroke={C.faint} strokeWidth={0.6} />
+          {linha ? <Line x1={W - D} x2={W - D} y1={T} y2={T + ph} stroke={C.faint} strokeWidth={0.6} /> : null}
+          {barras.valores.map((v, i) => (
+            <Rect key={i} x={E + passo * i + (passo - larg) / 2} y={yb(v)} width={larg} height={Math.max(0.5, T + ph - yb(v))}
+              fill={cores?.[i] ?? (destaqueUltima && i === n - 1 ? C.navy : barras.cor)} />
+          ))}
+          {linha && linha.valores.length > 1 ? (
+            <Polyline points={linha.valores.map((v, i) => `${E + passo * i + passo / 2},${yl(v)}`).join(" ")} fill="none" stroke={linha.cor} strokeWidth={1.3} />
+          ) : null}
+          {linha ? linha.valores.map((v, i) => <Rect key={`p${i}`} x={E + passo * i + passo / 2 - 1.5} y={yl(v) - 1.5} width={3} height={3} fill={linha.cor} />) : null}
+        </Svg>
+        {ticks.map((i) => (
+          <View key={`t${i}`} style={{ position: "absolute", top: yt(i) - 4, left: 0, width: W }}>
+            <Text style={[lbl, { top: 0, left: 0, width: E - 5, textAlign: "right" }]}>{barras.fmt(i * eb.passo)}</Text>
+            {linha ? <Text style={[lbl, { top: 0, left: W - D + 5, width: D - 5 }]}>{linha.fmt(i * (topoL / nt))}</Text> : null}
           </View>
         ))}
+        {valorNaBarra ? barras.valores.map((v, i) => (
+          <Text key={`v${i}`} style={[lbl, { top: yb(v) - 11, left: E + passo * i - 4, width: passo + 8, textAlign: "center", fontFamily: "Helvetica-Bold", color: C.ink, fontSize: 7.5 }]}>{barras.fmt(v)}</Text>
+        )) : null}
+        {rotulos.map((r, i) => (i % cada === 0 || i === n - 1 ? (
+          <Text key={`r${i}`} style={[lbl, { top: T + ph + 5, left: E + passo * i - 8, width: passo + 16, textAlign: "center" }]}>{r}</Text>
+        ) : null))}
+      </View>
+      <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 2 }}>
+        {!cores ? <View style={{ flexDirection: "row", alignItems: "center", marginRight: 14 }}><View style={{ width: 8, height: 8, backgroundColor: barras.cor, marginRight: 4 }} /><Text style={{ fontSize: 7.5, color: C.muted }}>{barras.titulo}</Text></View> : null}
+        {linha ? <View style={{ flexDirection: "row", alignItems: "center" }}><View style={{ width: 12, height: 1.6, backgroundColor: linha.cor, marginRight: 4 }} /><Text style={{ fontSize: 7.5, color: C.muted }}>{linha.titulo}</Text></View> : null}
       </View>
     </View>
   );
@@ -148,83 +175,101 @@ const taxaTxt = (ppm: number) => `${casas(ppm / 10_000, 2, 3)}%`;
 // Energia com 2 casas, como no relatório da HAV (13.458,32 kWh).
 const kwh2 = (wh: number) => `${casas(wh / 1000, 2, 2)} kWh`;
 
-// Relatório de performance do investidor, no modelo que a HAV fazia à mão:
-// tudo proporcional à cota de quem recebe (geração, receita, aporte, retorno).
-// Geração de cada dia do período (do app de monitoramento), na parte da cota.
-// Horas de geração = geração da usina no dia / capacidade (igual para todos).
-// Fecho do relatório: data de emissão e quem responde por ele (Configurações).
-function Assinatura({ e, emitido }: { e: Settings; emitido: string }) {
+// "Brasília, 28 de setembro de 2026.", como no fecho do relatório da HAV.
+const dataExtenso = (d: Date) => {
+  const iso = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(d);
+  return `${Number(iso.slice(8, 10))} de ${mesLongo(iso.slice(0, 7))}`;
+};
+
+// Fecho do relatório: cidade e data de emissão, quem responde por ele e a empresa.
+function Assinatura({ e }: { e: Settings }) {
   return (
-    <View style={{ marginTop: 10, alignItems: "center" }} wrap={false}>
-      <Text style={{ fontSize: 8, color: C.muted, marginBottom: 8 }}>Emitido em {emitido}.</Text>
-      {e.responsavel ? <View style={{ width: 200, borderTopWidth: 1, borderTopColor: C.ink, marginBottom: 2 }} /> : null}
-      {e.responsavel ? <Text style={{ fontFamily: "Helvetica-Bold" }}>{e.responsavel}</Text> : null}
-      {e.responsavelCargo ? <Text style={{ fontSize: 8.5, color: C.muted }}>{e.responsavelCargo}</Text> : null}
-      <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.navy, marginTop: 2 }}>{(e.razaoSocial || e.empresa).toUpperCase()}</Text>
+    <View style={{ marginTop: 14 }} wrap={false}>
+      <Text style={{ textAlign: "right", marginBottom: 26 }}>{e.cidade ? `${e.cidade}, ` : ""}{dataExtenso(new Date())}.</Text>
+      <View style={{ alignItems: "center" }}>
+        {e.responsavel ? <View style={{ width: 200, borderTopWidth: 1, borderTopColor: C.ink, marginBottom: 3 }} /> : null}
+        {e.responsavel ? <Text style={{ fontFamily: "Helvetica-Bold" }}>{e.responsavel}</Text> : null}
+        {e.responsavelCargo ? <Text style={{ fontSize: 8.5, color: C.muted }}>{e.responsavelCargo}</Text> : null}
+        <Text style={{ fontSize: 10, fontFamily: "Helvetica-Bold", color: C.navy, marginTop: 4 }}>{(e.razaoSocial || e.empresa).toUpperCase()}</Text>
+      </View>
     </View>
   );
 }
 
-function PaginaDias({ r, emitido, perTxt }: { r: RelatorioInvestidor; emitido: string; perTxt: string }) {
-  const f = r.fechamento;
+type Dia = { n: number; data: string; dataLonga: string; wh: number; horas: number; receita: number | null };
+function diasDoRelatorio(r: RelatorioInvestidor): Dia[] {
+  const ppm = r.rateio.cota_ppm, tarifa = r.extra.tarifa_kwh, cap = r.fechamento.capacidade_wp;
+  return r.dias.map((d, i) => {
+    const wh = Math.floor((d.geracao_wh * ppm) / 1_000_000);
+    return {
+      n: i + 1,
+      data: `${d.dia.slice(8, 10)}/${d.dia.slice(5, 7)}`,
+      dataLonga: `${d.dia.slice(8, 10)}/${d.dia.slice(5, 7)}/${d.dia.slice(0, 4)}`,
+      wh,
+      // Horas de geração (full load hours) = geração da usina no dia / capacidade: igual para todos os cotistas.
+      horas: cap ? d.geracao_wh / cap : 0,
+      receita: tarifa ? receitaPorTarifa(wh, tarifa) : null,
+    };
+  });
+}
+
+// Página de geração diária, no modelo da HAV: tabela em duas colunas e os totais.
+function PaginaDias({ r, perTxt }: { r: RelatorioInvestidor; perTxt: string }) {
   const ppm = r.rateio.cota_ppm;
-  const parte = (wh: number) => Math.floor((wh * ppm) / 1_000_000);
   const tarifa = r.extra.tarifa_kwh;
-  const linhas = r.dias.map((d, i) => ({ n: i + 1, data: `${d.dia.slice(8, 10)}/${d.dia.slice(5, 7)}`, wh: parte(d.geracao_wh), horas: f.capacidade_wp ? d.geracao_wh / f.capacidade_wp : 0, receita: tarifa ? receitaPorTarifa(parte(d.geracao_wh), tarifa) : null }));
+  const linhas = diasDoRelatorio(r);
   const total = linhas.reduce((a, l) => a + l.wh, 0);
   const metade = Math.ceil(linhas.length / 2);
-  const max = Math.max(...linhas.map((l) => l.wh), 1);
-  const W = 523, H = 90, passo = W / Math.max(linhas.length, 1), larg = Math.max(3, passo * 0.62);
-  const Coluna = ({ itens }: { itens: typeof linhas }) => (
+  const Coluna = ({ itens }: { itens: Dia[] }) => (
     <View style={[s.tab, { flex: 1, marginRight: 6 }]}>
-      <View style={s.th}>
-        <Text style={[s.thTxt, { width: 18 }]}>Nº</Text>
-        <Text style={[s.thTxt, { flex: 1.3 }]}>Data</Text>
-        <Text style={[s.thTxt, s.dir, { flex: 2 }]}>Geração (kWh)</Text>
-        <Text style={[s.thTxt, s.dir, { flex: 1.4 }]}>Horas (h)</Text>
-        {tarifa ? <Text style={[s.thTxt, s.dir, { flex: 1.8 }]}>Receita</Text> : null}
+      <View style={[s.th, { backgroundColor: C.navy }]}>
+        <Text style={[s.thTxt, { width: 16, color: "#fff" }]}>Nº</Text>
+        <Text style={[s.thTxt, { flex: 1.9, color: "#fff" }]}>DATA</Text>
+        <Text style={[s.thTxt, s.dir, { flex: 1.8, color: "#fff" }]}>YIELD (kWh)</Text>
+        <Text style={[s.thTxt, s.dir, { flex: 1.9, color: "#fff" }]}>FULL LOAD (h)</Text>
+        {tarifa ? <Text style={[s.thTxt, s.dir, { flex: 1.7, color: "#fff" }]}>RECEITA</Text> : null}
       </View>
       {itens.map((l, k) => (
-        <View key={l.n} style={[s.tr, { paddingVertical: 3 }, k === itens.length - 1 ? s.trUlt : {}]}>
-          <Text style={{ width: 18, fontSize: 8 }}>{l.n}</Text>
-          <Text style={{ flex: 1.3, fontSize: 8 }}>{l.data}</Text>
-          <Text style={[s.dir, { flex: 2, fontSize: 8 }]}>{casas(l.wh / 1000, 3, 3)}</Text>
-          <Text style={[s.dir, { flex: 1.4, fontSize: 8 }]}>{casas(l.horas, 2, 2)}</Text>
-          {l.receita !== null ? <Text style={[s.dir, { flex: 1.8, fontSize: 8 }]}>{brl(l.receita)}</Text> : null}
+        <View key={l.n} style={[s.tr, { paddingVertical: 2.6, backgroundColor: k % 2 ? C.bg : "#fff" }, k === itens.length - 1 ? s.trUlt : {}]}>
+          <Text style={{ width: 16, fontSize: 8 }}>{l.n}</Text>
+          <Text style={{ flex: 1.9, fontSize: 8 }}>{l.dataLonga}</Text>
+          <Text style={[s.dir, { flex: 1.8, fontSize: 8 }]}>{casas(l.wh / 1000, 3, 3)}</Text>
+          <Text style={[s.dir, { flex: 1.9, fontSize: 8 }]}>{casas(l.horas, 3, 3)}</Text>
+          {l.receita !== null ? <Text style={[s.dir, { flex: 1.7, fontSize: 8 }]}>{brl(l.receita)}</Text> : null}
         </View>
       ))}
     </View>
   );
   return (
     <Page size="A4" style={s.page}>
-      <Topo tipo="GERAÇÃO DIÁRIA DE ENERGIA" titulo={f.usina} />
+      <Topo tipo="RELATÓRIO DE PERFORMANCE UFV" titulo={r.fechamento.usina} />
       <View style={s.corpo}>
-        <Text style={s.para}>Período: {perTxt} · {ppm >= 1_000_000 ? "geração da usina" : `sua parte (${pct(ppm)}) da geração da usina`} · dados do app de monitoramento dos inversores.</Text>
-        <Svg width={W} height={H} style={{ marginTop: 8, marginBottom: 10 }}>
-          <Rect x={0} y={H - 1} width={W} height={0.8} fill={C.line} />
-          {linhas.map((l, k) => {
-            const h = Math.max(1, (l.wh / max) * (H - 6));
-            return <Rect key={l.n} x={passo * k + (passo - larg) / 2} y={H - 1 - h} width={larg} height={h} rx={1.5} fill={C.gold} />;
-          })}
-        </Svg>
+        <Text style={{ fontSize: 15, fontFamily: "Helvetica-Bold", color: C.navy, textAlign: "center" }}>GERAÇÃO DIÁRIA DE ENERGIA</Text>
+        <Text style={{ textAlign: "center", marginTop: 2 }}>Período: {perTxt}  |  Total do Período: {kwh2(total)}</Text>
+        <Text style={{ textAlign: "center", fontSize: 7.5, color: C.muted, marginBottom: 8 }}>
+          {ppm >= 1_000_000 ? "Geração da usina" : `Sua parte (${pct(ppm)}) da geração da usina`}, com os dados do app de monitoramento dos inversores.
+        </Text>
         <View style={{ flexDirection: "row" }}>
           <Coluna itens={linhas.slice(0, metade)} />
           <Coluna itens={linhas.slice(metade)} />
         </View>
         <View style={s.cards}>
-          <Card lbl={ppm >= 1_000_000 ? "Geração total" : "Sua geração total"} valor={kwh2(total)} />
-          <Card lbl="Dias com dado" valor={`${linhas.length} dias`} />
-          <Card lbl="Média diária" valor={kwh2(Math.round(total / Math.max(1, linhas.length)))} />
-          <Card lbl="Média de horas" valor={`${casas(linhas.reduce((a, l) => a + l.horas, 0) / Math.max(1, linhas.length), 2, 2)} h/dia`} ultimo={!tarifa} />
-          {tarifa ? <Card lbl="Receita do período" valor={brl(linhas.reduce((a, l) => a + (l.receita ?? 0), 0))} ultimo /> : null}
+          <Card lbl="GERAÇÃO TOTAL" valor={kwh2(total)} />
+          <Card lbl="DIAS DO PERÍODO" valor={`${linhas.length} dias`} />
+          <Card lbl="MÉDIA DIÁRIA" valor={kwh2(Math.round(total / Math.max(1, linhas.length)))} />
+          <Card lbl="MÉDIA FULL LOAD" valor={`${casas(linhas.reduce((a, l) => a + l.horas, 0) / Math.max(1, linhas.length), 2, 2)} h/dia`} ultimo={!tarifa} />
+          {tarifa ? <Card lbl="RECEITA" valor={brl(linhas.reduce((a, l) => a + (l.receita ?? 0), 0))} ultimo /> : null}
         </View>
         {tarifa ? <Text style={s.nota}>A receita de cada dia é a geração do dia x {tarifaTxt(tarifa)}. A soma dos dias pode diferir alguns centavos do valor oficial do período, que é calculado sobre o total.</Text> : null}
-        <Assinatura e={r.empresa} emitido={emitido} />
+        <Assinatura e={r.empresa} />
       </View>
-      <Rodape e={r.empresa} emitido={emitido} />
+      <Rodape e={r.empresa} />
     </Page>
   );
 }
+
+const Bullet = ({ children }: { children: string }) => <Text style={s.bullet}>•  {children}</Text>;
+const Rotulo = ({ a, b }: { a: string; b: string }) => <Text style={{ marginBottom: 1.5, paddingLeft: 6 }}><Text style={{ fontFamily: "Helvetica-Bold" }}>{a}: </Text>{b}</Text>;
 
 export function RelatorioInvestidorPdf({ r }: { r: RelatorioInvestidor }) {
   const f = r.fechamento;
@@ -246,116 +291,166 @@ export function RelatorioInvestidorPdf({ r }: { r: RelatorioInvestidor }) {
     : `Pendente${previsto ? `, previsto até ${dataBr(previsto)}` : ""}`;
   const taxa = (ppm: number) => Math.round((aporte * ppm) / 1_000_000);
   const extenso = (iso: string) => `${Number(iso.slice(8, 10))} de ${mesLongo(iso.slice(0, 7)).replace(/ de \d{4}$/, "")}`;
+  const dias = diasDoRelatorio(r);
+  const kwhEixo = (wh: number) => num(wh / 1000, wh < 10_000 ? 1 : 0);
+  const reais = (c: number) => (c >= 100_000 ? brl0(c) : brl(c));
+  const hist = r.historico;
+  let n = 7;
 
   return (
     <Document title={`Relatório ${mesLongo(f.comp)} · ${f.usina}`} author={e.empresa} subject="Relatório de performance do investidor">
       <Page size="A4" style={s.page}>
         <Topo tipo="RELATÓRIO DE PERFORMANCE UFV" titulo={f.usina} />
         <View style={s.corpo}>
-          <View style={[s.tab, { marginBottom: 12 }]}>
+          <View style={[s.tab, { marginBottom: 10 }]}>
             <Linha2 a="Empreendimento" b={[f.usina, [f.cidade, f.uf].filter(Boolean).join(", "), kwp(f.capacidade_wp)].filter(Boolean).join(" · ")} />
             <Linha2 a="Investidor" b={r.investidor.nome} />
-            <Linha2 a="Sua cota" b={cota} />
+            <Linha2 a="Cota" b={cota} />
             <Linha2 a="Período" b={perTxt} />
-            <Linha2 a="Data de emissão" b={emitido} ultimo />
+            <Linha2 a="Data de Emissão" b={emitido} ultimo />
           </View>
 
-          <Text style={s.secao}>1. SUMÁRIO EXECUTIVO</Text>
+          <Text style={s.secao}>1. Sumário Executivo</Text>
           <Text style={{ marginBottom: 6, textAlign: "justify" }}>
             Entre {extenso(per.ini)} e {extenso(per.fim)} de {per.fim.slice(0, 4)}, a {f.usina} registrou geração total de {kwh2(f.geracao_wh)}
-            {inteira ? `, média diária de ${kwh2(mediaDia)}.` : `. A sua cota de ${cota} corresponde a ${kwh2(minha)}, média diária de ${kwh2(mediaDia)}.`}
-            {x.disponibilidade_ppm != null ? ` No mesmo período, a disponibilidade operacional foi de ${pct(x.disponibilidade_ppm)}.` : ""}
-            {performance !== null ? ` A geração ficou em ${num(performance * 100, 1)}% do estimado no projeto.` : ""}
+            {inteira ? `, equivalente a uma média diária de ${kwh2(mediaDia)}.` : `. A sua cota de ${cota} corresponde a ${kwh2(minha)}, equivalente a uma média diária de ${kwh2(mediaDia)}.`}
+            {x.disponibilidade_ppm != null ? ` No mesmo período, a disponibilidade operacional atingiu ${pct(x.disponibilidade_ppm)}` : ""}
+            {performance !== null ? `${x.disponibilidade_ppm != null ? " e" : " A"} geração ficou em ${num(performance * 100, 1)}% do estimado no projeto.` : x.disponibilidade_ppm != null ? "." : ""}
+            {" "}Esses indicadores consolidam o comportamento técnico do ativo no ciclo analisado e servem de base para o acompanhamento das condições de operação.
           </Text>
-          <Text style={{ marginBottom: 12, textAlign: "justify" }}>
+          <Text style={{ marginBottom: 6, textAlign: "justify" }}>
             No resultado econômico do período, a energia {inteira ? "gerada" : "da sua cota"} proporcionou receita de {brl(receita)}.
             {aporte > 0 ? ` Considerando o aporte de ${brl(aporte)}, o valor corresponde a aproximadamente ${pct2(receita, aporte)} do capital investido no ciclo.` : ""}
-            {" "}A receita acompanha o volume efetivamente gerado, a disponibilidade da usina e as condições comerciais da energia produzida.
+            {" "}A evolução da receita permanece diretamente relacionada ao volume efetivamente gerado, à disponibilidade da usina e às condições comerciais aplicáveis à energia produzida.
           </Text>
 
-          <Text style={s.secao}>2. INDICADORES DO PERÍODO</Text>
+          <Text style={s.secao}>2. Dashboard de Indicadores-Chave</Text>
           <View style={s.cards}>
-            <Card lbl={inteira ? "Energia gerada" : "Sua energia gerada"} valor={kwh2(minha)} />
-            <Card lbl="Média diária" valor={kwh2(mediaDia)} />
+            <Card lbl={inteira ? "Energia Gerada" : "Sua Energia Gerada"} valor={kwh2(minha)} />
+            <Card lbl="Média Diária" valor={kwh2(mediaDia)} />
             <Card lbl="Disponibilidade" valor={x.disponibilidade_ppm != null ? pct(x.disponibilidade_ppm) : "-"} />
-            <Card lbl="Performance vs estimado" valor={performance !== null ? `${num(performance * 100, 1)}%` : "-"} ultimo />
+            <Card lbl="Performance vs Estimado" valor={performance !== null ? `${num(performance * 100, 1)}%` : "-"} ultimo />
           </View>
           <View style={s.tab}>
-            {x.tarifa_aferida ? <Linha2 a="Tarifa aferida" b={tarifaTxt(x.tarifa_aferida)} /> : null}
-            {x.tarifa_kwh ? <Linha2 a="Tarifa contratada" b={tarifaTxt(x.tarifa_kwh)} /> : null}
-            <Linha2 a={inteira ? "Receita do período" : "Sua receita do período"} b={brl(receita)} />
+            {x.tarifa_aferida ? <Linha2 a="Tarifa Aferida" b={tarifaTxt(x.tarifa_aferida)} /> : null}
+            {x.tarifa_kwh ? <Linha2 a="Tarifa Contratada" b={tarifaTxt(x.tarifa_kwh)} /> : null}
+            <Linha2 a="Receita do Período" b={brl(receita)} />
             {aporte > 0 ? <Linha2 a="Aporte" b={brl(aporte)} /> : null}
             {aporte > 0 ? <Linha2 a="Retorno sobre o aporte" b={pct2(receita, aporte)} /> : null}
             <Linha2 a="Repasse" b={repasse} ultimo />
           </View>
           {!inteira && (
-            <Text style={s.nota}>
+            <Text style={[s.nota, { marginTop: -8 }]}>
               A usina inteira gerou {kwh2(f.geracao_wh)} e teve receita de {brl(f.receita_centavos)} no período. Os seus números são a sua cota ({cota}) desses totais.
             </Text>
           )}
-
-          <Text style={[s.secao, { marginTop: 12 }]}>SOBRE O INVESTIMENTO</Text>
-          <Text style={s.para}><Text style={{ fontFamily: "Helvetica-Bold", color: C.ink }}>Perspectiva do investidor: </Text>receita vinculada à produção de energia, exposição a infraestrutura resiliente, baixa correlação com ativos tradicionais e potencial de renda recorrente.</Text>
-          <Text style={s.para}><Text style={{ fontFamily: "Helvetica-Bold", color: C.ink }}>Governança e gestão: </Text>monitoramento contínuo, manutenção preventiva, controle de performance e otimização operacional.</Text>
-          <Text style={s.para}><Text style={{ fontFamily: "Helvetica-Bold", color: C.ink }}>Riscos monitorados: </Text>oscilações climáticas, indisponibilidade técnica, eventos de rede, mudanças regulatórias e manutenção extraordinária.</Text>
-          <Text style={[s.para, { marginBottom: 10 }]}><Text style={{ fontFamily: "Helvetica-Bold", color: C.ink }}>Classes de ativos: </Text>CDI e renda fixa têm liquidez alta e retorno baixo a moderado; FIIs, dividendos variáveis e volatilidade média; imóveis físicos, baixa liquidez, gestão ativa e vacância; usina solar operacional, receita recorrente, ativo real e gestão profissional.</Text>
-
         </View>
-        <Rodape e={e} emitido={emitido} />
+        <Rodape e={e} />
       </Page>
 
       <Page size="A4" style={s.page}>
         <Topo tipo="RELATÓRIO DE PERFORMANCE UFV" titulo={f.usina} />
         <View style={s.corpo}>
+          <Text style={s.secao}>3. Perspectiva do Investidor</Text>
+          <Bullet>Receita vinculada à produção de energia</Bullet>
+          <Bullet>Exposição a infraestrutura resiliente</Bullet>
+          <Bullet>Baixa correlação com ativos tradicionais</Bullet>
+          <Bullet>Potencial de renda recorrente</Bullet>
+
+          <Text style={s.secao}>4. Governança & Gestão</Text>
+          <Text style={{ paddingLeft: 6 }}>Monitoramento contínuo, manutenção preventiva, controle de performance e otimização operacional.</Text>
+
+          <Text style={s.secao}>5. Riscos Monitorados</Text>
+          <Text style={{ paddingLeft: 6 }}>Oscilações climáticas, indisponibilidade técnica, eventos de rede, mudanças regulatórias e manutenção extraordinária.</Text>
+
+          <Text style={s.secao}>6. Comparativo Estratégico de Classe de Ativos</Text>
+          <Rotulo a="CDI/Renda Fixa" b="liquidez alta, retorno baixo a moderado." />
+          <Rotulo a="FIIs" b="dividendos variáveis, volatilidade média." />
+          <Rotulo a="Imóveis Físicos" b="baixa liquidez, gestão ativa, vacância." />
+          <Rotulo a="Usina Solar Operacional" b="receita recorrente, ativo real, gestão profissional." />
+
           {aporte > 0 && (
-            <>
-              <Text style={s.secao}>3. O SEU RETORNO VS OUTROS INVESTIMENTOS</Text>
-              <Comparativo itens={[
-                { nome: "Usina solar (você)", valor: receita, cor: "#0d5c3a" },
-                { nome: "CDI / CDB 100% CDI", valor: taxa(e.cdiPeriodo), cor: C.navy },
-                { nome: "FIIs (média)", valor: taxa(e.fiiPeriodo), cor: "#46698f" },
-                { nome: "Poupança", valor: taxa(e.poupancaPeriodo), cor: "#8a9099" },
-              ]} />
-              <Text style={[s.nota, { marginBottom: 12 }]}>
-                Quanto o mesmo aporte ({brl(aporte)}) teria rendido no período: CDI {taxaTxt(e.cdiPeriodo)}, FIIs {taxaTxt(e.fiiPeriodo)}, poupança {taxaTxt(e.poupancaPeriodo)}. Taxas de referência informadas pela {e.empresa}.
+            <View wrap={false} style={{ marginTop: 16 }}>
+              <Text style={s.subTit}>O RETORNO DO INVESTIDOR VS OUTROS INVESTIMENTOS</Text>
+              <Text style={{ fontSize: 12, fontFamily: "Helvetica-Bold", color: C.navy, textAlign: "center", marginBottom: 6 }}>COMPARATIVO DE RENTABILIDADE</Text>
+              <GraficoEixos
+                rotulos={["Usina solar (você)", "CDI / CDB 100% CDI", "FIIs (média)", "Poupança"]}
+                barras={{ valores: [receita, taxa(e.cdiPeriodo), taxa(e.fiiPeriodo), taxa(e.poupancaPeriodo)], cor: C.navy, fmt: reais, titulo: "Retorno no período (R$)" }}
+                cores={["#0d5c3a", C.navy, "#46698f", "#8a9099"]}
+                altura={160}
+                valorNaBarra
+              />
+              <Text style={{ textAlign: "center", fontFamily: "Helvetica-Bold", color: C.navy, fontSize: 9 }}>
+                Aporte realizado: {brl(aporte)}  |  Retorno no período: {brl(receita)} ({pct2(receita, aporte)})
               </Text>
+              <Text style={[s.nota, { textAlign: "center" }]}>
+                Quanto o mesmo aporte teria rendido no período: CDI {taxaTxt(e.cdiPeriodo)}, FIIs {taxaTxt(e.fiiPeriodo)}, poupança {taxaTxt(e.poupancaPeriodo)}. Taxas de referência informadas pela {e.empresa}.
+              </Text>
+            </View>
+          )}
+          <Text style={[s.nota, { marginTop: 16 }]}>
+            Relatório emitido pela {(e.razaoSocial || e.empresa)}, com o mês fechado pela equipe em {dataBr(f.fechado_em)}. Valores passados não garantem resultados futuros. Dúvidas: fale com a {e.empresa} pelos canais do rodapé ou pelo app.
+          </Text>
+        </View>
+        <Rodape e={e} />
+      </Page>
+
+      <Page size="A4" style={s.page}>
+        <Topo tipo="RELATÓRIO DE PERFORMANCE UFV" titulo={f.usina} />
+        <View style={s.corpo}>
+          <Text style={s.secao}>{n++}. Dados Financeiros para Liquidação</Text>
+          {x.conta ? <Text style={{ paddingLeft: 6 }}>{x.conta.banco}  |  AG {x.conta.agencia}  |  C/C {x.conta.conta}</Text> : null}
+          {x.pix ? <Text style={{ paddingLeft: 6 }}>Chave Pix: {x.pix}</Text> : null}
+          {!x.conta && !x.pix ? <Text style={{ paddingLeft: 6, color: C.muted }}>Conta não informada. Cadastre no app, em Perfil, Dados bancários.</Text> : null}
+          <Text style={{ paddingLeft: 6, marginTop: 3 }}>Favorecido: {r.investidor.nome}</Text>
+
+          {dias.length > 0 && (
+            <>
+              <Text style={s.secao}>{n++}. Dados de monitoramento</Text>
+              <Text style={[s.subTit, { marginBottom: 4 }]}>DADOS DE MONITORAMENTO: DISTRIBUIÇÃO DIÁRIA{inteira ? "" : ` (SUA COTA, ${cota})`}</Text>
+              <GraficoEixos
+                rotulos={dias.map((d) => d.data)}
+                barras={{ valores: dias.map((d) => d.wh), cor: "#f2c38a", fmt: kwhEixo, titulo: "Geração (kWh)" }}
+                linha={x.tarifa_kwh ? { valores: dias.map((d) => d.receita ?? 0), cor: C.goldBar, fmt: (c) => num(c / 100, 0), titulo: "Receita diária (R$)" } : undefined}
+                altura={170}
+                cada={dias.length > 16 ? 2 : 1}
+              />
             </>
           )}
 
-          <Text style={s.secao}>{aporte > 0 ? "4" : "3"}. SUA RECEITA NOS ÚLTIMOS MESES</Text>
-          <Grafico dados={r.historico} />
-          <View style={s.tab}>
-            <View style={s.th}>
-              <Text style={[s.thTxt, { flex: 2 }]}>Mês (últimos 4)</Text>
-              <Text style={[s.thTxt, s.dir, { flex: 2 }]}>{inteira ? "Geração" : "Sua geração"}</Text>
-              <Text style={[s.thTxt, s.dir, { flex: 2 }]}>Receita</Text>
-            </View>
-            {[...r.historico].reverse().slice(0, 4).map((h, i, l) => (
-              <View key={h.comp} style={[s.tr, i === l.length - 1 ? s.trUlt : {}]}>
-                <Text style={{ flex: 2 }}>{mesLongo(h.comp)}</Text>
-                <Text style={[s.dir, { flex: 2 }]}>{kwh2(h.geracao_wh)}</Text>
-                <Text style={[s.dir, { flex: 2 }]}>{brl(h.receita_centavos)}</Text>
+          {hist.length > 0 && (
+            <>
+              <Text style={s.secao}>{n++}. Sua receita nos últimos meses</Text>
+              <GraficoEixos
+                rotulos={hist.map((h) => `${mesAbrev(h.comp)}/${h.comp.slice(2, 4)}`)}
+                barras={{ valores: hist.map((h) => h.receita_centavos), cor: C.gold, fmt: reais, titulo: "Receita (R$)" }}
+                linha={{ valores: hist.map((h) => h.geracao_wh), cor: C.navy, fmt: kwhEixo, titulo: "Geração (kWh)" }}
+                altura={150}
+                destaqueUltima
+              />
+              <View style={s.tab}>
+                <View style={s.th}>
+                  <Text style={[s.thTxt, { flex: 2 }]}>Mês (últimos 4)</Text>
+                  <Text style={[s.thTxt, s.dir, { flex: 2 }]}>{inteira ? "Geração" : "Sua geração"}</Text>
+                  <Text style={[s.thTxt, s.dir, { flex: 2 }]}>Receita</Text>
+                </View>
+                {[...hist].reverse().slice(0, 4).map((h, i, l) => (
+                  <View key={h.comp} style={[s.tr, i === l.length - 1 ? s.trUlt : {}]}>
+                    <Text style={{ flex: 2 }}>{mesLongo(h.comp)}</Text>
+                    <Text style={[s.dir, { flex: 2 }]}>{kwh2(h.geracao_wh)}</Text>
+                    <Text style={[s.dir, { flex: 2 }]}>{brl(h.receita_centavos)}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-          <Text style={[s.nota, { marginTop: -8, marginBottom: 12 }]}>Seu acumulado nesta usina: {brl(r.acumulado_centavos)}.</Text>
+              <Text style={[s.nota, { marginTop: -8 }]}>Seu acumulado nesta usina: {brl(r.acumulado_centavos)}.</Text>
+            </>
+          )}
 
-          <Text style={s.secao}>{aporte > 0 ? "5" : "4"}. DADOS PARA O PAGAMENTO</Text>
-          <View style={s.tab}>
-            {x.conta ? <Linha2 a="Conta" b={`${x.conta.banco} · Ag. ${x.conta.agencia} · C/C ${x.conta.conta}`} /> : null}
-            {x.pix ? <Linha2 a="Chave Pix" b={x.pix} /> : null}
-            {!x.conta && !x.pix ? <Linha2 a="Conta" b="Não informada. Cadastre no app, em Perfil, Dados bancários." /> : null}
-            <Linha2 a="Favorecido" b={r.investidor.nome} ultimo />
-          </View>
-
-          <Text style={s.nota}>
-            Relatório emitido pela {(e.razaoSocial || e.empresa)}, com o mês fechado pela equipe em {dataBr(f.fechado_em)}. Valores passados não garantem resultados futuros. Dúvidas: fale com a {e.empresa} pelos canais abaixo ou pelo app.
-          </Text>
-          {r.dias.length === 0 && <Assinatura e={e} emitido={emitido} />}
+          {dias.length === 0 && <Assinatura e={e} />}
         </View>
-        <Rodape e={e} emitido={emitido} />
+        <Rodape e={e} />
       </Page>
-      {r.dias.length > 0 && <PaginaDias r={r} emitido={emitido} perTxt={perTxt} />}
+      {dias.length > 0 && <PaginaDias r={r} perTxt={perTxt} />}
     </Document>
   );
 }
@@ -398,7 +493,7 @@ export function RelatorioFechamentoPdf({ r }: { r: RelatorioFechamento }) {
           </View>
           <Text style={s.nota}>Documento interno da {r.empresa.empresa}: contém dados de todos os cotistas da usina.</Text>
         </View>
-        <Rodape e={r.empresa} emitido={dataBr(new Date())} />
+        <Rodape e={r.empresa} />
       </Page>
     </Document>
   );

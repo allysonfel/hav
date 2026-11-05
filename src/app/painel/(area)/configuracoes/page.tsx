@@ -43,7 +43,12 @@ async function salvar(fd: FormData) {
   if (cdiPeriodo === null || fiiPeriodo === null || poupancaPeriodo === null) redirect("/painel/configuracoes?erro=1");
   const responsavel = String(fd.get("responsavel") ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
   const responsavelCargo = String(fd.get("responsavel_cargo") ?? "").trim().replace(/\s+/g, " ").slice(0, 60);
-  await saveSettings({ responsavel, responsavelCargo, empresa, razaoSocial, cnpj, diaFechamento, prazoRepasse, suporteWhatsapp, suporteEmail, oportunidades, emailRelatorio, projecaoApp, agente, inicioPeriodo, cdiPeriodo, fiiPeriodo, poupancaPeriodo });
+  const linha = (campo: string, max: number) => String(fd.get(campo) ?? "").trim().replace(/\s+/g, " ").slice(0, max);
+  const slogan = linha("slogan", 120), endereco = linha("endereco", 160), cidade = linha("cidade", 60);
+  let instagram = linha("instagram", 40);
+  if (instagram && !instagram.startsWith("@")) instagram = "@" + instagram;
+  if (instagram && !/^@[\w.]{1,39}$/.test(instagram)) redirect("/painel/configuracoes?erro=1");
+  await saveSettings({ slogan, endereco, instagram, cidade, responsavel, responsavelCargo, empresa, razaoSocial, cnpj, diaFechamento, prazoRepasse, suporteWhatsapp, suporteEmail, oportunidades, emailRelatorio, projecaoApp, agente, inicioPeriodo, cdiPeriodo, fiiPeriodo, poupancaPeriodo });
   const lig = (b: boolean) => (b ? "ligada" : "desligada");
   await audit(`usuario:${u.id}`, "configuracoes_salvas", null, null,
     `oportunidades ${lig(oportunidades)}; email ${lig(emailRelatorio)}; projecao no app ${lig(projecaoApp)}; agente ${lig(agente)}`);
@@ -121,6 +126,14 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
         <div className="form-grid">
           <div className="field"><label htmlFor="responsavel">Responsável pelo relatório (nome)</label><input id="responsavel" name="responsavel" defaultValue={s.responsavel} maxLength={80} /></div>
           <div className="field"><label htmlFor="responsavel_cargo">Cargo</label><input id="responsavel_cargo" name="responsavel_cargo" defaultValue={s.responsavelCargo} maxLength={60} placeholder="Diretor" /><small>Sai no fim do relatório do investidor, com local e data de emissão.</small></div>
+        </div>
+        <div className="box-title">Rodapé dos relatórios em PDF</div>
+        <p className="muted sm" style={{ margin: "0 0 10px" }}>Sai no pé de todas as páginas, como no relatório que a HAV fazia: nome da empresa, slogan, sede, CNPJ, WhatsApp e e-mail de atendimento (acima) e Instagram.</p>
+        <div className="field"><label htmlFor="slogan">Slogan</label><input id="slogan" name="slogan" defaultValue={s.slogan} maxLength={120} /></div>
+        <div className="field"><label htmlFor="endereco">Sede</label><input id="endereco" name="endereco" defaultValue={s.endereco} maxLength={160} /></div>
+        <div className="form-grid">
+          <div className="field"><label htmlFor="instagram">Instagram</label><input id="instagram" name="instagram" defaultValue={s.instagram} maxLength={40} placeholder="@havenergia" /></div>
+          <div className="field"><label htmlFor="cidade">Cidade da emissão</label><input id="cidade" name="cidade" defaultValue={s.cidade} maxLength={60} /><small>No fecho: &quot;{s.cidade || "Cidade"}, 28 de setembro de 2026.&quot;</small></div>
         </div>
         <div className="box-title">Integração com o monitoramento</div>
         <p className="muted sm" style={{ margin: "0 0 14px" }}>

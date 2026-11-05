@@ -33,7 +33,22 @@ export type Settings = {
   // Quem assina o relatório do investidor (nome e cargo), no fim do PDF.
   responsavel: string;
   responsavelCargo: string;
+  // Rodapé e fecho do relatório, como no modelo da HAV: slogan, sede, Instagram
+  // e a cidade da data de emissão ("Brasília, 28 de setembro de 2026").
+  slogan: string;
+  endereco: string;
+  instagram: string;
+  cidade: string;
 };
+
+// Padrões tirados do relatório que a HAV fazia à mão (setembro de 2026).
+export const RODAPE_PADRAO = {
+  slogan: "Soluções em Geração Distribuída e Ativos de Infraestrutura Energética",
+  endereco: "Sede Administrativa: SHTQ QD 01 CJ 03 Lote 11 - Brasília/DF",
+  instagram: "@havenergia",
+  cidade: "Brasília",
+};
+const texto = (v: unknown, max: number, padrao: string) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ").slice(0, max) : padrao);
 
 const taxa = (v: unknown, padrao: number) => {
   const n = Number(v);
@@ -67,6 +82,10 @@ export async function getSettings(): Promise<Settings> {
     poupancaPeriodo: taxa(d.poupancaPeriodo, 6_750),
     responsavel: typeof d.responsavel === "string" ? d.responsavel.trim().slice(0, 80) : "",
     responsavelCargo: typeof d.responsavelCargo === "string" ? d.responsavelCargo.trim().slice(0, 60) : "",
+    slogan: texto(d.slogan, 120, RODAPE_PADRAO.slogan),
+    endereco: texto(d.endereco, 160, RODAPE_PADRAO.endereco),
+    instagram: texto(d.instagram, 40, RODAPE_PADRAO.instagram),
+    cidade: texto(d.cidade, 60, RODAPE_PADRAO.cidade),
   };
 }
 

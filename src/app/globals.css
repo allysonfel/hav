@@ -632,3 +632,20 @@ a.box:active { background: rgba(255,255,255,.14); }
 @keyframes veuIn { from { opacity: 0; } }
 @media (max-width: 520px) { .confirmar-acoes .btn { flex: 1; } }
 @media (prefers-reduced-motion: reduce) { .confirmar[open], .confirmar::backdrop { animation: none; } }
+
+/* Gráfico por dia: balão com o valor logo acima da barra escolhida (BarrasDias) */
+.dias-grafico { position: relative; }
+.dias-faixa { position: relative; height: 54px; margin-top: 4px; }
+.dias-balao { position: absolute; bottom: 6px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; padding: 6px 11px 7px; border-radius: 10px; background: var(--navy); color: #fff; box-shadow: 0 8px 18px -10px var(--sombra); white-space: nowrap; line-height: 1.15; transition: left .18s ease; pointer-events: none; z-index: 2; }
+.dias-balao::after { content: ""; position: absolute; bottom: -5px; left: 50%; width: 10px; height: 10px; background: inherit; transform: translateX(-50%) rotate(45deg); border-radius: 2px; }
+.dias-balao-esq { transform: translateX(-14px); align-items: flex-start; }
+.dias-balao-esq::after { left: 14px; }
+.dias-balao-dir { transform: translateX(calc(-100% + 14px)); align-items: flex-end; }
+.dias-balao-dir::after { left: auto; right: 9px; transform: rotate(45deg); }
+.dias-balao b { font-family: var(--titulo); font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.dias-balao-dia { font-size: 11px; opacity: .8; font-weight: 600; }
+.dias-balao-rs { font-size: 12px; font-weight: 700; color: var(--gold); margin-top: 1px; }
+:root[data-theme="dark"] .dias-balao { background: #23466f; }
+.barras-dias { padding-top: 0; }
+.barras-dias .barras-col.sel .barras-mes { color: var(--ink); font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { .dias-balao { transition: none; } }

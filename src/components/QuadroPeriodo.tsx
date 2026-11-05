@@ -50,7 +50,7 @@ export async function QuadroPeriodo({ usinaId, inicio, tarifa, cotaPpm, painel, 
             {tarifa && estimativa !== null && <div className="card kpi"><div className="label">Estimativa no fim do período</div><div className="value num">{brl(receitaPorTarifa(estimativa, tarifa))}</div><div className="delta neutro">se o ritmo continuar</div></div>}
             {!tarifa && estimativa !== null && <div className="card kpi"><div className="label">Estimativa no fim do período</div><div className="value num">{kwh(estimativa)}</div><div className="delta neutro">se o ritmo continuar</div></div>}
           </div>
-          <BarrasDias titulo="Geração por dia" dias={grade(p, dias).map((d) => ({ dia: d.dia, geracao_wh: d.geracao_wh === null ? null : parte(d.geracao_wh) }))} />
+          <BarrasDias titulo="Geração por dia" tarifa={tarifa} hoje={hoje} dias={grade(p, dias).map((d) => ({ dia: d.dia, geracao_wh: d.geracao_wh === null ? null : parte(d.geracao_wh) }))} />
           <p className="muted sm" style={{ margin: "8px 0 0" }}>
             Média de {kwh(Math.round(meu / Math.max(1, dias.length)))} por dia{sit.monitoramento_sinc ? ` · atualizado ${haQuanto(sit.monitoramento_sinc)}` : ""}.
             {estimativa !== null ? " A estimativa usa a média dos dias até agora: depende do sol e da operação, não é garantia." : ""}
