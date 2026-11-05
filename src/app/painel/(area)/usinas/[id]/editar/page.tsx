@@ -4,6 +4,7 @@ import { sql } from "@/lib/db";
 import { Retorno } from "@/components/basicos";
 import { ERROS_USINA, FormUsina, type UsinaForm } from "../../FormUsina";
 import { excluirUsina } from "../../acoes";
+import { dadosSolis } from "@/lib/monitoramento";
 
 export default async function EditarUsina({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ erro?: string }> }) {
   await requireUser(["admin"]);
@@ -12,13 +13,13 @@ export default async function EditarUsina({ params, searchParams }: { params: Pr
   if (!Number.isInteger(id) || id < 1) notFound();
   const [usina] = await sql<UsinaForm[]>`
     SELECT id, nome, cidade, uf, capacidade_wp, investimento_centavos, status, to_char(operando_desde, 'YYYY-MM') AS desde,
-      inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh
+      inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh, monitoramento_tipo, monitoramento_id
     FROM usinas WHERE id = ${id}`;
   if (!usina) notFound();
   return (
     <>
       <Retorno erro={erro} mapaErro={ERROS_USINA} />
-      <FormUsina usina={usina} />
+      <FormUsina usina={usina} solis={await dadosSolis()} />
       <form action={excluirUsina} style={{ marginTop: 14 }}>
         <input type="hidden" name="id" value={usina.id} />
         <button className="btn btn-danger btn-sm">Excluir usina</button>

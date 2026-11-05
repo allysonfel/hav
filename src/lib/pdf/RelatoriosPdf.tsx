@@ -150,6 +150,63 @@ const kwh2 = (wh: number) => `${casas(wh / 1000, 2, 2)} kWh`;
 
 // Relatório de performance do investidor, no modelo que a HAV fazia à mão:
 // tudo proporcional à cota de quem recebe (geração, receita, aporte, retorno).
+// Geração de cada dia do período (do app de monitoramento), na parte da cota.
+// Horas de geração = geração da usina no dia / capacidade (igual para todos).
+function PaginaDias({ r, emitido, perTxt }: { r: RelatorioInvestidor; emitido: string; perTxt: string }) {
+  const f = r.fechamento;
+  const ppm = r.rateio.cota_ppm;
+  const parte = (wh: number) => Math.floor((wh * ppm) / 1_000_000);
+  const linhas = r.dias.map((d, i) => ({ n: i + 1, data: `${d.dia.slice(8, 10)}/${d.dia.slice(5, 7)}/${d.dia.slice(0, 4)}`, wh: parte(d.geracao_wh), horas: f.capacidade_wp ? d.geracao_wh / f.capacidade_wp : 0 }));
+  const total = linhas.reduce((a, l) => a + l.wh, 0);
+  const metade = Math.ceil(linhas.length / 2);
+  const max = Math.max(...linhas.map((l) => l.wh), 1);
+  const W = 523, H = 90, passo = W / Math.max(linhas.length, 1), larg = Math.max(3, passo * 0.62);
+  const Coluna = ({ itens }: { itens: typeof linhas }) => (
+    <View style={[s.tab, { flex: 1, marginRight: 6 }]}>
+      <View style={s.th}>
+        <Text style={[s.thTxt, { width: 18 }]}>Nº</Text>
+        <Text style={[s.thTxt, { flex: 2 }]}>Data</Text>
+        <Text style={[s.thTxt, s.dir, { flex: 2 }]}>Geração (kWh)</Text>
+        <Text style={[s.thTxt, s.dir, { flex: 1.6 }]}>Horas (h)</Text>
+      </View>
+      {itens.map((l, k) => (
+        <View key={l.n} style={[s.tr, { paddingVertical: 3 }, k === itens.length - 1 ? s.trUlt : {}]}>
+          <Text style={{ width: 18, fontSize: 8 }}>{l.n}</Text>
+          <Text style={{ flex: 2, fontSize: 8 }}>{l.data}</Text>
+          <Text style={[s.dir, { flex: 2, fontSize: 8 }]}>{casas(l.wh / 1000, 3, 3)}</Text>
+          <Text style={[s.dir, { flex: 1.6, fontSize: 8 }]}>{casas(l.horas, 3, 3)}</Text>
+        </View>
+      ))}
+    </View>
+  );
+  return (
+    <Page size="A4" style={s.page}>
+      <Topo tipo="GERAÇÃO DIÁRIA DE ENERGIA" titulo={f.usina} />
+      <View style={s.corpo}>
+        <Text style={s.para}>Período: {perTxt} · {ppm >= 1_000_000 ? "geração da usina" : `sua parte (${pct(ppm)}) da geração da usina`} · dados do app de monitoramento dos inversores.</Text>
+        <Svg width={W} height={H} style={{ marginTop: 8, marginBottom: 10 }}>
+          <Rect x={0} y={H - 1} width={W} height={0.8} fill={C.line} />
+          {linhas.map((l, k) => {
+            const h = Math.max(1, (l.wh / max) * (H - 6));
+            return <Rect key={l.n} x={passo * k + (passo - larg) / 2} y={H - 1 - h} width={larg} height={h} rx={1.5} fill={C.gold} />;
+          })}
+        </Svg>
+        <View style={{ flexDirection: "row" }}>
+          <Coluna itens={linhas.slice(0, metade)} />
+          <Coluna itens={linhas.slice(metade)} />
+        </View>
+        <View style={s.cards}>
+          <Card lbl={ppm >= 1_000_000 ? "Geração total" : "Sua geração total"} valor={kwh2(total)} />
+          <Card lbl="Dias com dado" valor={`${linhas.length} dias`} />
+          <Card lbl="Média diária" valor={kwh2(Math.round(total / Math.max(1, linhas.length)))} />
+          <Card lbl="Média de horas" valor={`${casas(linhas.reduce((a, l) => a + l.horas, 0) / Math.max(1, linhas.length), 2, 2)} h/dia`} ultimo />
+        </View>
+      </View>
+      <Rodape e={r.empresa} emitido={emitido} />
+    </Page>
+  );
+}
+
 export function RelatorioInvestidorPdf({ r }: { r: RelatorioInvestidor }) {
   const f = r.fechamento;
   const x = r.extra;
@@ -277,6 +334,7 @@ export function RelatorioInvestidorPdf({ r }: { r: RelatorioInvestidor }) {
         </View>
         <Rodape e={e} emitido={emitido} />
       </Page>
+      {r.dias.length > 0 && <PaginaDias r={r} emitido={emitido} perTxt={perTxt} />}
     </Document>
   );
 }

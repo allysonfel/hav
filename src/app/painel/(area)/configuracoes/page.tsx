@@ -7,6 +7,7 @@ import { campoDecimal, periodoTexto, ppmDe } from "@/lib/format";
 import { Retorno } from "@/components/basicos";
 import { emailConfigurado } from "@/lib/email";
 import { iaConfigurada } from "@/lib/ia";
+import { solisConfigurada } from "@/lib/monitoramento/solis";
 import { demoAtiva } from "@/lib/demo";
 import { alternarDemo } from "./acoes";
 
@@ -114,6 +115,10 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
           <div className="field"><label htmlFor="fii">Fundos imobiliários, média (% no período)</label><input id="fii" name="fii" defaultValue={campoDecimal(s.fiiPeriodo / 10_000, 4)} required inputMode="decimal" /></div>
           <div className="field"><label htmlFor="poupanca">Poupança (% no período)</label><input id="poupanca" name="poupanca" defaultValue={campoDecimal(s.poupancaPeriodo / 10_000, 4)} required inputMode="decimal" /></div>
         </div>
+        <div className="box-title">Integração com o monitoramento</div>
+        <p className="muted sm" style={{ margin: "0 0 14px" }}>
+          Solis (SolisCloud): {solisConfigurada() ? <b>chave configurada no servidor.</b> : <b>chave ainda não configurada no servidor.</b>} Cada usina é ligada em Usinas, Editar, Integração com o monitoramento. A geração de cada dia é atualizada a cada 30 minutos de uso.
+        </p>
         <div className="field"><label>Fuso horário</label><input value="América/Recife (UTC-3)" disabled readOnly /></div>
         <button className="btn btn-primary">Salvar alterações</button>
       </form>

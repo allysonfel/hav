@@ -6,6 +6,7 @@ import { getSettings } from "@/lib/settings";
 import { COMPETENCIA, campoDecimal, competenciaEsperada, kwh, mesAno, mesAtual, periodoCurto, periodoTexto, somarMeses, tarifaTxt } from "@/lib/format";
 import { Retorno } from "@/components/basicos";
 import { lancarGeracao } from "../../acoes";
+import { diasDoPeriodo } from "@/lib/monitoramento";
 
 const ERROS: Record<string, string> = {
   mes: "Escolha um mês válido (não pode ser no futuro).",
@@ -31,6 +32,8 @@ export default async function Lancar({ params, searchParams }: { params: Promise
   const lancados = await sql<{ comp: string; geracao_wh: number; receita_centavos: number; status: string; disponibilidade_ppm: number | null }[]>`
     SELECT to_char(competencia, 'YYYY-MM') AS comp, geracao_wh, receita_centavos, status, disponibilidade_ppm FROM fechamentos WHERE usina_id = ${id}`;
   const atual = lancados.find((l) => l.comp === comp);
+  // Com integração, a soma dos dias do período já preenche a geração.
+  const solis = await diasDoPeriodo(id, comp, s.inicioPeriodo);
   const rotulo = (m: string) => {
     const l = lancados.find((x) => x.comp === m);
     return `${mesAno(m)} (${periodoTexto(m, s.inicioPeriodo).replace(/\/\d{4}/g, "")})${l ? (l.status === "fechado" ? " (fechado)" : " (rascunho)") : ""}`;
@@ -60,7 +63,8 @@ export default async function Lancar({ params, searchParams }: { params: Promise
             <input type="hidden" name="usina" value={id} />
             <input type="hidden" name="comp" value={comp} />
             <p className="muted sm" style={{ margin: "0 0 10px" }}>Período de {mesAno(comp)}: <b>{periodoTexto(comp, s.inicioPeriodo)}</b>.</p>
-            <div className="field"><label htmlFor="geracao">Geração de {mesAno(comp)} (kWh)</label><input id="geracao" name="geracao" required inputMode="decimal" defaultValue={atual ? campoDecimal(atual.geracao_wh / 1000, 3) : ""} placeholder="142.300" />
+            <div className="field"><label htmlFor="geracao">Geração de {mesAno(comp)} (kWh)</label><input id="geracao" name="geracao" required inputMode="decimal" defaultValue={atual ? campoDecimal(atual.geracao_wh / 1000, 3) : solis.dias.length ? campoDecimal(solis.total / 1000, 3) : ""} placeholder="142.300" />
+              {solis.dias.length > 0 && <small><b>Monitoramento: {kwh(solis.total)} em {solis.dias.length} de {solis.p.dias} dias do período.</b>{atual ? " O valor acima é o que foi lançado." : " Já preenchido; confira antes de lançar."}{solis.dias.length < solis.p.dias ? " Faltam dias: o período ainda não terminou ou o app não mandou todos." : ""}</small>}
               <small>{u.geracao_esperada_wh ? `Esperado para esta usina: cerca de ${kwh(u.geracao_esperada_wh)} por mês. Abaixo de 85% disso, o sistema avisa.` : "Valor do aplicativo de monitoramento dos inversores, no período inteiro."}</small></div>
             {u.tarifa_kwh ? (
               <div className="aviso info" style={{ marginBottom: 14 }}>A receita é calculada sozinha: geração x <b>{tarifaTxt(u.tarifa_kwh)}</b>. Cada cotista recebe a parte da própria cota.</div>

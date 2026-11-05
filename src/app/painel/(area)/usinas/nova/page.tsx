@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/session";
 import { Retorno } from "@/components/basicos";
 import { ERROS_USINA, FormUsina } from "../FormUsina";
+import { dadosSolis } from "@/lib/monitoramento";
 
 export default async function NovaUsina({ searchParams }: { searchParams: Promise<{ erro?: string; status?: string }> }) {
   await requireUser(["admin"]);
@@ -8,7 +9,7 @@ export default async function NovaUsina({ searchParams }: { searchParams: Promis
   return (
     <>
       <Retorno erro={erro} mapaErro={ERROS_USINA} />
-      <FormUsina status={status === "captacao" ? "captacao" : undefined} />
+      <FormUsina status={status === "captacao" ? "captacao" : undefined} solis={await dadosSolis()} />
     </>
   );
 }

@@ -5,6 +5,7 @@ import { sql } from "./db";
 import { getSettings, type Settings } from "./settings";
 import { decifrar } from "./cifra";
 import { abrirConta, type Conta } from "./contaBancaria";
+import { diasDoPeriodo } from "./monitoramento";
 
 export type RelatorioInvestidor = {
   empresa: Settings;
@@ -14,6 +15,8 @@ export type RelatorioInvestidor = {
   // Modelo do relatório da HAV: tarifa e disponibilidade do mês, esperado da
   // usina, valor investido na cota (aporte) e dados para o pagamento.
   extra: { tarifa_kwh: number | null; disponibilidade_ppm: number | null; esperada_wh: number | null; aporte_centavos: number; pix: string; conta: Conta | null };
+  // Geração de cada dia do período (da usina inteira), quando há integração.
+  dias: { dia: string; geracao_wh: number }[];
   historico: { comp: string; geracao_wh: number; receita_centavos: number }[];
   acumulado_centavos: number;
 };
@@ -47,6 +50,7 @@ export async function relatorioInvestidor(fechamentoId: number, investidorId: nu
     extra: { tarifa_kwh: l.tarifa_kwh, disponibilidade_ppm: l.disponibilidade_ppm, esperada_wh: l.esperada_wh, aporte_centavos: l.aporte_centavos ?? 0, pix: decifrar(l.pix_cifrado), conta: abrirConta(l.conta_cifrada) },
     historico: [...historico].reverse(),
     acumulado_centavos: total,
+    dias: (await diasDoPeriodo(l.usina_id, l.comp, (await getSettings()).inicioPeriodo)).dias,
   };
 }
 

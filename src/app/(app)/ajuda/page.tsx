@@ -10,6 +10,7 @@ const FAQ: [string, string][] = [
   ["O que é \"% do esperado\"?", "Cada usina tem uma geração esperada por mês, do projeto. O número mostra quanto ela gerou em relação a isso. Abaixo de 85% aparece em amarelo: pode ser chuva, nuvens ou manutenção, e a equipe acompanha."],
   ["Onde informo minha chave Pix ou conta bancária?", "Em Perfil, Dados bancários para repasse. A troca pede a sua senha. Os dados aparecem no seu relatório mensal, em Dados para o pagamento."],
   ["Qual período cada relatório cobre?", "O período de apuração da HAV: do dia 21 de um mês ao dia 20 do seguinte. O relatório de setembro, por exemplo, vai de 21/08 a 20/09. A data aparece em Relatórios e no PDF."],
+  ["Consigo ver a geração em tempo real?", "Sim, nas usinas ligadas ao app de monitoramento: no Início aparece o período em andamento, com a geração de cada dia, quanto você já gerou e já rendeu e uma estimativa para o fim do período. Os dados são atualizados a cada 30 minutos. O valor oficial é o do relatório, quando a HAV fecha o período."],
   ["Como é calculada a minha receita?", "Geração da usina no período x o valor pago por kWh daquela usina. Você recebe a parte da sua cota. No PDF aparecem a tarifa, a sua energia e o retorno sobre o seu aporte."],
   ["Como baixo o relatório em PDF?", "Em Relatórios, toque em PDF no mês que quiser. A planilha continua disponível ao lado."],
   ["Recebo o relatório por e-mail?", "Sim, quando a equipe fecha o mês, o PDF chega no seu e-mail cadastrado. Para ligar ou desligar, vá em Perfil, Notificações."],

@@ -11,6 +11,7 @@ Painel interno (usinas, investidores, captação, rateio) e app do investidor. N
 `npm run teste` confere o cálculo do rateio. O backup diário é um serviço separado, na pasta `backup/`.
 
 ## Plano Plus
+- Integração com o monitoramento (Solis): `src/lib/monitoramento/`. Usina vinculada em Editar (Integração + ID da usina na Solis); a geração de cada dia entra em `geracao_diaria`, atualizada quando alguém abre a tela (dados com mais de 30 min) ou no botão Atualizar agora. Aparece no período em andamento (painel e app, proporcional à cota), preenche o lançamento do mês e gera a página de geração diária do PDF. Precisa de `SOLIS_KEY_ID` e `SOLIS_KEY_SECRET`.
 - Agente de IA (botão dourado) no painel e no app: `src/lib/agente.ts`. Contexto montado no servidor pelo perfil (operador sem captação; investidor só os próprios dados). Precisa de `GROQ_API_KEY`.
 - Comparativo entre usinas: `/painel/comparativo` (geração, receita, kWh/kWp, R$/kWp). No app, em Usinas, quando o investidor tem 2 ou mais.
 - Histórico de 12 ou 24 meses com projeção de 3 meses (`src/lib/projecao.ts`, testada em `npm run teste`). No app, só com "projeção no app" ligada em Configurações.

@@ -6,6 +6,9 @@ import { local } from "@/lib/usinas";
 import { historicoInvestidor } from "@/lib/historico";
 import { getSettings } from "@/lib/settings";
 import { Historico } from "@/components/basicos";
+import { after } from "next/server";
+import { sincronizarVencidas } from "@/lib/monitoramento";
+import { QuadroPeriodo } from "@/components/QuadroPeriodo";
 import { atrasado, pctTexto, previsaoRepasse, relacaoEsperado, rendimentoInvestidor, situacaoEsperado } from "@/lib/acompanhamento";
 
 export default async function Inicio() {
@@ -18,6 +21,8 @@ export default async function Inicio() {
   const rend = await rendimentoInvestidor(i.id);
   const ativas = usinas.filter((u) => u.status !== "captacao").length;
   const primeiro = i.nome.split(" ")[0];
+  const integradas = usinas.filter((u) => u.monitoramento_tipo && u.status !== "captacao");
+  if (integradas.length) after(() => sincronizarVencidas(cfg.inicioPeriodo, integradas.map((u) => u.usina_id)));
 
   // Repasse do último mês fechado (somando as usinas): pago, previsto ou atrasado.
   const doMes = atual ? (await meusRelatorios(i.id)).filter((r) => r.comp === atual.comp) : [];
@@ -77,6 +82,10 @@ export default async function Inicio() {
             aviso="Estimativa simples pelo histórico das usinas. Não é promessa de rendimento: a geração depende do sol, da operação e da tarifa." />
         </div>
       )}
+
+      {integradas.map((u) => (
+        <QuadroPeriodo key={u.usina_id} usinaId={u.usina_id} inicio={cfg.inicioPeriodo} tarifa={u.tarifa_kwh} cotaPpm={u.cota_ppm} titulo={`${u.nome}: agora`} />
+      ))}
 
       <div className="section-head"><h3>Minhas usinas</h3>{ativas > 0 && <span className="hint">{ativas} {ativas === 1 ? "cota ativa" : "cotas ativas"}</span>}</div>
       {usinas.length === 0 && <div className="card card-p vazio">Nenhuma cota registrada ainda.</div>}

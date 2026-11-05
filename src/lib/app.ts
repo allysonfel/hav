@@ -17,11 +17,13 @@ export type MinhaUsina = {
   geracao_wh: number | null;
   receita_centavos: number | null;
   geracao_esperada_wh: number | null;
+  tarifa_kwh: number | null;
+  monitoramento_tipo: string;
 };
 
 export function minhasUsinas(investidorId: number) {
   return sql<MinhaUsina[]>`
-    SELECT c.usina_id, u.nome, u.cidade, u.uf, u.status, u.capacidade_wp, to_char(u.operando_desde, 'YYYY-MM') AS desde, u.geracao_esperada_wh,
+    SELECT c.usina_id, u.nome, u.cidade, u.uf, u.status, u.capacidade_wp, to_char(u.operando_desde, 'YYYY-MM') AS desde, u.geracao_esperada_wh, u.tarifa_kwh, u.monitoramento_tipo,
       c.cota_ppm, c.valor_centavos, r.comp, r.geracao_wh, r.receita_centavos
     FROM cotas c JOIN usinas u ON u.id = c.usina_id
     LEFT JOIN LATERAL (

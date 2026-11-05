@@ -9,6 +9,10 @@ import { Historico, Kpi, PillUsina, Progresso, Retorno } from "@/components/basi
 import { historicoUsinas, periodoDe } from "@/lib/historico";
 import { removerCota, salvarCota } from "../acoes";
 import { relacaoEsperado, situacaoEsperado } from "@/lib/acompanhamento";
+import { after } from "next/server";
+import { getSettings } from "@/lib/settings";
+import { sincronizarVencidas } from "@/lib/monitoramento";
+import { QuadroPeriodo } from "@/components/QuadroPeriodo";
 
 const ERROS: Record<string, string> = {
   valor: "Informe o valor investido.",
@@ -16,6 +20,7 @@ const ERROS: Record<string, string> = {
   investidor: "Escolha um investidor ativo.",
   cota: "Confira o percentual da cota.",
   excede: "Com essa cota, a usina passaria de 100%. Ajuste as outras primeiro.",
+  sinc: "Não deu para atualizar com a Solis agora. O motivo aparece no quadro do período.",
 };
 
 export default async function Usina({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string; p?: string }> }) {
@@ -49,6 +54,9 @@ export default async function Usina({ params, searchParams }: { params: Promise<
   const atual = serie[serie.length - 1];
   const esperada = u.geracao_esperada_wh;
   const sit = situacaoEsperado(relacaoEsperado(atual?.geracao_wh, esperada));
+  const cfg = await getSettings();
+  // Dados do monitoramento com mais de 30 min: atualiza depois de responder.
+  after(() => sincronizarVencidas(cfg.inicioPeriodo, [u.id]));
   const soma = somaPpm(cotas);
   const ppms = cotas.map((c) => c.cota_ppm);
   const prevGeracao = atual ? dividir(atual.geracao_wh, ppms) : [];
@@ -56,8 +64,9 @@ export default async function Usina({ params, searchParams }: { params: Promise<
 
   return (
     <>
-      <Retorno ok={sp.ok} erro={sp.erro} mapaErro={ERROS} mapaOk={{ usina: "Usina salva.", cota: "Cota salva.", cota_removida: "Cota removida. Meses já fechados não mudam." }} />
+      <Retorno ok={sp.ok} erro={sp.erro} mapaErro={ERROS} mapaOk={{ sinc: "Geração atualizada com a Solis.", usina: "Usina salva.", cota: "Cota salva.", cota_removida: "Cota removida. Meses já fechados não mudam." }} />
       <Link className="btn btn-ghost" style={{ marginBottom: 14 }} href="/painel/usinas">← Voltar para usinas</Link>
+      {u.status !== "captacao" && <QuadroPeriodo usinaId={u.id} inicio={cfg.inicioPeriodo} tarifa={u.tarifa_kwh} painel titulo={`${u.nome}: período em andamento`} />}
 
       <div className="card card-p" style={{ marginBottom: 16 }}>
         <div className="section-head" style={{ marginBottom: 16 }}>

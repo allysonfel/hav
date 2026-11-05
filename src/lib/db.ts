@@ -242,6 +242,25 @@ ALTER TABLE fechamentos ADD COLUMN IF NOT EXISTS disponibilidade_ppm INT CHECK (
 -- Conta bancária do investidor para o repasse (banco, agência, conta),
 -- criptografada como a chave Pix.
 ALTER TABLE investidores ADD COLUMN IF NOT EXISTS conta_cifrada TEXT;
+
+-- Integração com o app de monitoramento dos inversores (lib/monitoramento).
+-- monitoramento_tipo: '' (sem integração) ou 'solis'; monitoramento_id: id da
+-- usina no app. A chave de acesso fica só no ambiente, nunca no banco.
+ALTER TABLE usinas ADD COLUMN IF NOT EXISTS monitoramento_tipo TEXT NOT NULL DEFAULT '' CHECK (monitoramento_tipo IN ('', 'solis'));
+ALTER TABLE usinas ADD COLUMN IF NOT EXISTS monitoramento_id TEXT NOT NULL DEFAULT '' CHECK (length(monitoramento_id) <= 40);
+ALTER TABLE usinas ADD COLUMN IF NOT EXISTS monitoramento_sinc TIMESTAMPTZ;
+ALTER TABLE usinas ADD COLUMN IF NOT EXISTS monitoramento_erro TEXT NOT NULL DEFAULT '';
+
+-- Geração de cada dia, puxada do app de monitoramento (fonte 'solis') ou da
+-- demonstração ('demo'). O dia de hoje vai sendo atualizado ao longo do dia.
+CREATE TABLE IF NOT EXISTS geracao_diaria (
+  usina_id INT NOT NULL REFERENCES usinas(id) ON DELETE CASCADE,
+  dia DATE NOT NULL,
+  geracao_wh BIGINT NOT NULL CHECK (geracao_wh >= 0),
+  fonte TEXT NOT NULL DEFAULT 'solis' CHECK (fonte IN ('solis', 'demo')),
+  atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (usina_id, dia)
+);
 `;
 
 let pronto: Promise<void> | null = null;

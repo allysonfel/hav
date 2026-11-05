@@ -73,9 +73,9 @@ export async function carregarDemo(adminId: number): Promise<void> {
 
     for (const u of USINAS) {
       const [us] = await tx<{ id: number }[]>`
-        INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh)
+        INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh, monitoramento_tipo)
         VALUES (${u.nome}, ${u.cidade}, ${u.uf}, ${u.kwp * 1000}, ${u.invest * 100}, ${u.status}, ${u.desde ? u.desde + "-01" : null}, ${u.marca}, ${u.modelo}, ${u.qtd}, ${u.mon},
-          ${u.status === "operando" ? u.kwp * 125_000 : null}, ${u.status === "operando" ? 5000 : null})
+          ${u.status === "operando" ? u.kwp * 125_000 : null}, ${u.status === "operando" ? 5000 : null}, ${u.status === "operando" ? "solis" : ""})
         RETURNING id`;
       await marca("usinas", us.id);
       const cotas = Object.entries(COTAS[u.nome]).map(([k, valor]) => ({ investidor: inv[k], valor, ppm: Math.round((valor / u.invest) * 1_000_000) }));
@@ -87,6 +87,15 @@ export async function carregarDemo(adminId: number): Promise<void> {
           await marca("interesses", it.id);
         }
         continue;
+      }
+
+      // Geração por dia dos últimos 75 dias (como se viesse do app da Solis), para mostrar o período em andamento.
+      const hoje = new Date(new Date().toLocaleDateString("en-CA", { timeZone: "America/Recife" }) + "T12:00:00Z");
+      for (let d = 75; d >= 0; d--) {
+        const dia = new Date(hoje.getTime() - d * 86_400_000).toISOString().slice(0, 10);
+        const fator = 0.62 + (((d * 37 + u.nome.length * 11) % 50) / 100); // 62% a 111% de um dia médio
+        const wh = Math.round((u.ultimo * 1000 / 30) * fator * (d === 0 ? 0.55 : 1));
+        await tx`INSERT INTO geracao_diaria (usina_id, dia, geracao_wh, fonte) VALUES (${us.id}, ${dia}, ${wh}, 'demo')`;
       }
 
       const ppms = cotas.map((c) => c.ppm);

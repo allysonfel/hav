@@ -10,6 +10,8 @@ import { requireUser } from "@/lib/session";
 import { audit } from "@/lib/audit";
 import { COMPETENCIA, centavosDe, mesAno, mesAtual, mesLongo, ppmDe, receitaPorTarifa, tarifaDe, whDe, wpDe } from "@/lib/format";
 import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
+import { sincronizarUsina } from "@/lib/monitoramento";
+import { getSettings } from "@/lib/settings";
 import { COMPROVANTE_MAX, nomeSeguro, tipoComprovante } from "@/lib/comprovantes";
 
 const texto = (fd: FormData, campo: string, max: number) => String(fd.get(campo) ?? "").trim().replace(/\s+/g, " ").slice(0, max);
@@ -46,21 +48,25 @@ export async function salvarUsina(fd: FormData) {
   if (!Number.isInteger(qtd) || qtd < 0 || qtd > 100000) redirect(`${volta}?erro=qtd`);
   if (esperadaTxt && !esperada) redirect(`${volta}?erro=esperada`);
   if (tarifaTxt && !tarifa) redirect(`${volta}?erro=tarifa`);
+  const monTipo = fd.get("mon_tipo") === "solis" ? "solis" : "";
+  const monId = monTipo ? texto(fd, "mon_id", 40) : "";
+  if (monTipo && !/^\d{1,40}$/.test(monId)) redirect(`${volta}?erro=integracao`);
   const [mesmoNome] = await sql`SELECT 1 FROM usinas WHERE nome = ${nome} AND id <> ${id}`;
   if (mesmoNome) redirect(`${volta}?erro=duplicada`);
 
   if (id) {
     const r = await sql`
       UPDATE usinas SET nome = ${nome}, cidade = ${cidade}, uf = ${uf}, capacidade_wp = ${capacidade}, investimento_centavos = ${investimento},
-        status = ${status}, operando_desde = ${desde}, inversor_marca = ${marca}, inversor_modelo = ${modelo}, inversor_qtd = ${qtd}, monitoramento = ${monitoramento}, geracao_esperada_wh = ${esperada}, tarifa_kwh = ${tarifa}
+        status = ${status}, operando_desde = ${desde}, inversor_marca = ${marca}, inversor_modelo = ${modelo}, inversor_qtd = ${qtd}, monitoramento = ${monitoramento}, geracao_esperada_wh = ${esperada}, tarifa_kwh = ${tarifa},
+        monitoramento_sinc = CASE WHEN monitoramento_id = ${monId} AND monitoramento_tipo = ${monTipo} THEN monitoramento_sinc END, monitoramento_tipo = ${monTipo}, monitoramento_id = ${monId}
       WHERE id = ${id} RETURNING id`;
     if (!r.length) redirect("/painel/usinas");
     await audit(`usuario:${u.id}`, "usina_editada", "usina", id, nome);
     redirect(`/painel/usinas/${id}?ok=usina`);
   }
   const [n] = await sql<{ id: number }[]>`
-    INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh)
-    VALUES (${nome}, ${cidade}, ${uf}, ${capacidade}, ${investimento}, ${status}, ${desde}, ${marca}, ${modelo}, ${qtd}, ${monitoramento}, ${esperada}, ${tarifa}) RETURNING id`;
+    INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh, monitoramento_tipo, monitoramento_id)
+    VALUES (${nome}, ${cidade}, ${uf}, ${capacidade}, ${investimento}, ${status}, ${desde}, ${marca}, ${modelo}, ${qtd}, ${monitoramento}, ${esperada}, ${tarifa}, ${monTipo}, ${monId}) RETURNING id`;
   await audit(`usuario:${u.id}`, "usina_criada", "usina", n.id, nome);
   redirect(`/painel/usinas/${n.id}?ok=usina`);
 }
@@ -277,4 +283,13 @@ export async function enviarComprovante(fd: FormData) {
   });
   await audit(`usuario:${u.id}`, "comprovante_enviado", "rateio", rateio, r.repasse_status === "pendente" ? "e marcado como pago" : "trocado");
   redirect(`${volta}?ok=comprovante`);
+}
+
+// "Atualizar agora": puxa de novo a geração do app de monitoramento.
+export async function sincronizarAgora(fd: FormData) {
+  const u = await requireUser(["admin", "operador"]);
+  const id = idDe(fd.get("usina"));
+  const r = await sincronizarUsina(id, (await getSettings()).inicioPeriodo, true);
+  await audit(`usuario:${u.id}`, "monitoramento_sincronizado", "usina", id, r.ok ? "ok" : r.erro);
+  redirect(`/painel/usinas/${id}?${r.ok ? "ok=sinc" : "erro=sinc"}#dias`);
 }

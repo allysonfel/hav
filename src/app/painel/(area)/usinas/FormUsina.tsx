@@ -16,9 +16,11 @@ export type UsinaForm = {
   monitoramento: string;
   geracao_esperada_wh: number | null;
   tarifa_kwh: number | null;
+  monitoramento_tipo: string;
+  monitoramento_id: string;
 };
 
-export function FormUsina({ usina, status }: { usina?: UsinaForm; status?: string }) {
+export function FormUsina({ usina, status, solis }: { usina?: UsinaForm; status?: string; solis?: { configurada: boolean; usinas: { id: string; nome: string }[]; erro?: string } }) {
   return (
     <form action={salvarUsina} className="card card-p" style={{ maxWidth: 760 }}>
       {usina && <input type="hidden" name="id" value={usina.id} />}
@@ -60,6 +62,31 @@ export function FormUsina({ usina, status }: { usina?: UsinaForm; status?: strin
         <div className="field"><label htmlFor="qtd">Quantidade</label><input id="qtd" name="qtd" type="number" min={0} max={100000} defaultValue={usina?.inversor_qtd ?? 0} /></div>
         <div className="field"><label htmlFor="monitoramento">App ou site de monitoramento</label><input id="monitoramento" name="monitoramento" defaultValue={usina?.monitoramento} maxLength={120} /></div>
       </div>
+      <div className="box-title">Integração com o monitoramento</div>
+      <p className="muted sm" style={{ margin: "0 0 10px" }}>Ligada, a geração de cada dia entra sozinha no sistema: o investidor acompanha no app quanto a usina gerou e quanto vai receber no período, e o lançamento do mês já vem preenchido.</p>
+      <div className="form-grid">
+        <div className="field">
+          <label htmlFor="mon_tipo">Integração</label>
+          <select id="mon_tipo" name="mon_tipo" defaultValue={usina?.monitoramento_tipo ?? ""}>
+            <option value="">Sem integração (geração lançada à mão)</option>
+            <option value="solis">Solis (SolisCloud)</option>
+          </select>
+          {solis && !solis.configurada && <small>A chave da Solis ainda não foi configurada no servidor. Dá para deixar a usina vinculada: os dados começam a entrar quando a chave for ligada.</small>}
+        </div>
+        <div className="field">
+          <label htmlFor="mon_id">Usina na Solis</label>
+          {solis?.usinas.length ? (
+            <select id="mon_id" name="mon_id" defaultValue={usina?.monitoramento_id ?? ""}>
+              <option value="">Escolha</option>
+              {solis.usinas.map((s) => <option key={s.id} value={s.id}>{s.nome} (ID {s.id})</option>)}
+              {usina?.monitoramento_id && !solis.usinas.some((s) => s.id === usina.monitoramento_id) && <option value={usina.monitoramento_id}>ID {usina.monitoramento_id}</option>}
+            </select>
+          ) : (
+            <input id="mon_id" name="mon_id" defaultValue={usina?.monitoramento_id} maxLength={40} inputMode="numeric" placeholder="ID da usina no SolisCloud" />
+          )}
+          <small>{solis?.erro ? `Não deu para listar as usinas da Solis agora (${solis.erro}). Informe o ID.` : "O ID aparece no endereço da usina no site do SolisCloud."}</small>
+        </div>
+      </div>
       <button className="btn btn-primary">{usina ? "Salvar alterações" : "Cadastrar usina"}</button>
     </form>
   );
@@ -72,6 +99,7 @@ export const ERROS_USINA: Record<string, string> = {
   investimento: "Informe o investimento total.",
   qtd: "Confira a quantidade de inversores.",
   tarifa: "Confira o valor por kWh (ex.: 0,56).",
+  integracao: "Com a integração ligada, escolha a usina na Solis (ID só com números).",
   esperada: "Confira a geração esperada por mês (em kWh, a partir de 1).",
   duplicada: "Já existe uma usina com esse nome.",
   movimento: "Esta usina tem cotistas, lançamentos ou interessados e não pode ser excluída. Use o status Pausada.",
