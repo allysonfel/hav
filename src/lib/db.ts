@@ -253,6 +253,10 @@ ALTER TABLE usinas ADD COLUMN IF NOT EXISTS monitoramento_erro TEXT NOT NULL DEF
 
 -- Geração de cada dia, puxada do app de monitoramento (fonte 'solis') ou da
 -- demonstração ('demo'). O dia de hoje vai sendo atualizado ao longo do dia.
+-- Tarifa aferida da usina (R$/kWh da energia compensada, como no relatório da
+-- HAV), mesma escala da tarifa_kwh. Só informativa no relatório.
+ALTER TABLE usinas ADD COLUMN IF NOT EXISTS tarifa_aferida INT CHECK (tarifa_aferida IS NULL OR tarifa_aferida BETWEEN 1 AND 1000000);
+
 CREATE TABLE IF NOT EXISTS geracao_diaria (
   usina_id INT NOT NULL REFERENCES usinas(id) ON DELETE CASCADE,
   dia DATE NOT NULL,

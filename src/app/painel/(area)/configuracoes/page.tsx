@@ -40,7 +40,9 @@ async function salvar(fd: FormData) {
   };
   const cdiPeriodo = taxaDe("cdi"), fiiPeriodo = taxaDe("fii"), poupancaPeriodo = taxaDe("poupanca");
   if (cdiPeriodo === null || fiiPeriodo === null || poupancaPeriodo === null) redirect("/painel/configuracoes?erro=1");
-  await saveSettings({ empresa, razaoSocial, cnpj, diaFechamento, prazoRepasse, suporteWhatsapp, suporteEmail, oportunidades, emailRelatorio, projecaoApp, agente, inicioPeriodo, cdiPeriodo, fiiPeriodo, poupancaPeriodo });
+  const responsavel = String(fd.get("responsavel") ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+  const responsavelCargo = String(fd.get("responsavel_cargo") ?? "").trim().replace(/\s+/g, " ").slice(0, 60);
+  await saveSettings({ responsavel, responsavelCargo, empresa, razaoSocial, cnpj, diaFechamento, prazoRepasse, suporteWhatsapp, suporteEmail, oportunidades, emailRelatorio, projecaoApp, agente, inicioPeriodo, cdiPeriodo, fiiPeriodo, poupancaPeriodo });
   const lig = (b: boolean) => (b ? "ligada" : "desligada");
   await audit(`usuario:${u.id}`, "configuracoes_salvas", null, null,
     `oportunidades ${lig(oportunidades)}; email ${lig(emailRelatorio)}; projecao no app ${lig(projecaoApp)}; agente ${lig(agente)}`);
@@ -114,6 +116,10 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
           <div className="field"><label htmlFor="cdi">CDI / CDB 100% CDI (% no período)</label><input id="cdi" name="cdi" defaultValue={campoDecimal(s.cdiPeriodo / 10_000, 4)} required inputMode="decimal" /></div>
           <div className="field"><label htmlFor="fii">Fundos imobiliários, média (% no período)</label><input id="fii" name="fii" defaultValue={campoDecimal(s.fiiPeriodo / 10_000, 4)} required inputMode="decimal" /></div>
           <div className="field"><label htmlFor="poupanca">Poupança (% no período)</label><input id="poupanca" name="poupanca" defaultValue={campoDecimal(s.poupancaPeriodo / 10_000, 4)} required inputMode="decimal" /></div>
+        </div>
+        <div className="form-grid">
+          <div className="field"><label htmlFor="responsavel">Responsável pelo relatório (nome)</label><input id="responsavel" name="responsavel" defaultValue={s.responsavel} maxLength={80} /></div>
+          <div className="field"><label htmlFor="responsavel_cargo">Cargo</label><input id="responsavel_cargo" name="responsavel_cargo" defaultValue={s.responsavelCargo} maxLength={60} placeholder="Diretor" /><small>Sai no fim do relatório do investidor, com local e data de emissão.</small></div>
         </div>
         <div className="box-title">Integração com o monitoramento</div>
         <p className="muted sm" style={{ margin: "0 0 14px" }}>

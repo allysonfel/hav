@@ -16,6 +16,7 @@ export type UsinaForm = {
   monitoramento: string;
   geracao_esperada_wh: number | null;
   tarifa_kwh: number | null;
+  tarifa_aferida: number | null;
   monitoramento_tipo: string;
   monitoramento_id: string;
 };
@@ -48,6 +49,11 @@ export function FormUsina({ usina, status, solis }: { usina?: UsinaForm; status?
           <label htmlFor="tarifa">Valor pago por kWh gerado (R$)</label>
           <input id="tarifa" name="tarifa" defaultValue={usina?.tarifa_kwh ? campoDecimal(usina.tarifa_kwh / 10_000, 4) : ""} inputMode="decimal" placeholder="0,56" />
           <small>Com ele, a receita do mês é calculada sozinha: geração x este valor, e cada cotista recebe a parte da própria cota. Sem ele, a receita é digitada no lançamento.</small>
+        </div>
+        <div className="field inteiro">
+          <label htmlFor="aferida">Tarifa aferida (R$/kWh, opcional)</label>
+          <input id="aferida" name="aferida" defaultValue={usina?.tarifa_aferida ? campoDecimal(usina.tarifa_aferida / 10_000, 4) : ""} inputMode="decimal" placeholder="1,09" />
+          <small>Só aparece no relatório do investidor, ao lado da tarifa contratada. Não entra no cálculo.</small>
         </div>
         <div className="field inteiro">
           <label htmlFor="esperada">Geração esperada por mês (kWh, opcional)</label>
@@ -99,6 +105,7 @@ export const ERROS_USINA: Record<string, string> = {
   investimento: "Informe o investimento total.",
   qtd: "Confira a quantidade de inversores.",
   tarifa: "Confira o valor por kWh (ex.: 0,56).",
+  aferida: "Confira a tarifa aferida (ex.: 1,09).",
   integracao: "Com a integração ligada, escolha a usina na Solis (ID só com números).",
   esperada: "Confira a geração esperada por mês (em kWh, a partir de 1).",
   duplicada: "Já existe uma usina com esse nome.",

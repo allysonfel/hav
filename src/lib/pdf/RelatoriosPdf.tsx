@@ -5,7 +5,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { Document, Image, Page, Rect, StyleSheet, Svg, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { cnpjFormatado } from "../cpf";
-import { brl, dataBr, kwh, kwp, mesAbrev, mesLongo, num, pct, periodo, periodoTexto, tarifaTxt } from "../format";
+import { brl, dataBr, kwh, kwp, mesAbrev, mesLongo, num, pct, periodo, periodoTexto, receitaPorTarifa, tarifaTxt } from "../format";
 import { previsaoRepasse } from "../acompanhamento";
 import type { RelatorioFechamento, RelatorioInvestidor } from "../relatorios";
 import type { Settings } from "../settings";
@@ -108,7 +108,7 @@ function Grafico({ dados }: { dados: { comp: string; receita_centavos: number }[
 
 // Comparativo do relatório: o retorno do período sobre o mesmo valor investido.
 function Comparativo({ itens }: { itens: { nome: string; valor: number; cor: string }[] }) {
-  const W = 523, H = 100, base = 96;
+  const W = 523, H = 76, base = 72;
   const max = Math.max(...itens.map((i) => i.valor), 1);
   const passo = W / itens.length;
   const larg = Math.min(70, passo * 0.55);
@@ -117,7 +117,7 @@ function Comparativo({ itens }: { itens: { nome: string; valor: number; cor: str
       <Svg width={W} height={H}>
         <Rect x={0} y={base} width={W} height={0.8} fill={C.line} />
         {itens.map((it, i) => {
-          const h = Math.max(2, (it.valor / max) * 86);
+          const h = Math.max(2, (it.valor / max) * 64);
           return <Rect key={it.nome} x={passo * i + (passo - larg) / 2} y={base - h} width={larg} height={h} rx={3} fill={it.cor} />;
         })}
       </Svg>
@@ -152,11 +152,25 @@ const kwh2 = (wh: number) => `${casas(wh / 1000, 2, 2)} kWh`;
 // tudo proporcional à cota de quem recebe (geração, receita, aporte, retorno).
 // Geração de cada dia do período (do app de monitoramento), na parte da cota.
 // Horas de geração = geração da usina no dia / capacidade (igual para todos).
+// Fecho do relatório: data de emissão e quem responde por ele (Configurações).
+function Assinatura({ e, emitido }: { e: Settings; emitido: string }) {
+  return (
+    <View style={{ marginTop: 10, alignItems: "center" }} wrap={false}>
+      <Text style={{ fontSize: 8, color: C.muted, marginBottom: 8 }}>Emitido em {emitido}.</Text>
+      {e.responsavel ? <View style={{ width: 200, borderTopWidth: 1, borderTopColor: C.ink, marginBottom: 2 }} /> : null}
+      {e.responsavel ? <Text style={{ fontFamily: "Helvetica-Bold" }}>{e.responsavel}</Text> : null}
+      {e.responsavelCargo ? <Text style={{ fontSize: 8.5, color: C.muted }}>{e.responsavelCargo}</Text> : null}
+      <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.navy, marginTop: 2 }}>{(e.razaoSocial || e.empresa).toUpperCase()}</Text>
+    </View>
+  );
+}
+
 function PaginaDias({ r, emitido, perTxt }: { r: RelatorioInvestidor; emitido: string; perTxt: string }) {
   const f = r.fechamento;
   const ppm = r.rateio.cota_ppm;
   const parte = (wh: number) => Math.floor((wh * ppm) / 1_000_000);
-  const linhas = r.dias.map((d, i) => ({ n: i + 1, data: `${d.dia.slice(8, 10)}/${d.dia.slice(5, 7)}/${d.dia.slice(0, 4)}`, wh: parte(d.geracao_wh), horas: f.capacidade_wp ? d.geracao_wh / f.capacidade_wp : 0 }));
+  const tarifa = r.extra.tarifa_kwh;
+  const linhas = r.dias.map((d, i) => ({ n: i + 1, data: `${d.dia.slice(8, 10)}/${d.dia.slice(5, 7)}`, wh: parte(d.geracao_wh), horas: f.capacidade_wp ? d.geracao_wh / f.capacidade_wp : 0, receita: tarifa ? receitaPorTarifa(parte(d.geracao_wh), tarifa) : null }));
   const total = linhas.reduce((a, l) => a + l.wh, 0);
   const metade = Math.ceil(linhas.length / 2);
   const max = Math.max(...linhas.map((l) => l.wh), 1);
@@ -165,16 +179,18 @@ function PaginaDias({ r, emitido, perTxt }: { r: RelatorioInvestidor; emitido: s
     <View style={[s.tab, { flex: 1, marginRight: 6 }]}>
       <View style={s.th}>
         <Text style={[s.thTxt, { width: 18 }]}>Nº</Text>
-        <Text style={[s.thTxt, { flex: 2 }]}>Data</Text>
+        <Text style={[s.thTxt, { flex: 1.3 }]}>Data</Text>
         <Text style={[s.thTxt, s.dir, { flex: 2 }]}>Geração (kWh)</Text>
-        <Text style={[s.thTxt, s.dir, { flex: 1.6 }]}>Horas (h)</Text>
+        <Text style={[s.thTxt, s.dir, { flex: 1.4 }]}>Horas (h)</Text>
+        {tarifa ? <Text style={[s.thTxt, s.dir, { flex: 1.8 }]}>Receita</Text> : null}
       </View>
       {itens.map((l, k) => (
         <View key={l.n} style={[s.tr, { paddingVertical: 3 }, k === itens.length - 1 ? s.trUlt : {}]}>
           <Text style={{ width: 18, fontSize: 8 }}>{l.n}</Text>
-          <Text style={{ flex: 2, fontSize: 8 }}>{l.data}</Text>
+          <Text style={{ flex: 1.3, fontSize: 8 }}>{l.data}</Text>
           <Text style={[s.dir, { flex: 2, fontSize: 8 }]}>{casas(l.wh / 1000, 3, 3)}</Text>
-          <Text style={[s.dir, { flex: 1.6, fontSize: 8 }]}>{casas(l.horas, 3, 3)}</Text>
+          <Text style={[s.dir, { flex: 1.4, fontSize: 8 }]}>{casas(l.horas, 2, 2)}</Text>
+          {l.receita !== null ? <Text style={[s.dir, { flex: 1.8, fontSize: 8 }]}>{brl(l.receita)}</Text> : null}
         </View>
       ))}
     </View>
@@ -199,8 +215,11 @@ function PaginaDias({ r, emitido, perTxt }: { r: RelatorioInvestidor; emitido: s
           <Card lbl={ppm >= 1_000_000 ? "Geração total" : "Sua geração total"} valor={kwh2(total)} />
           <Card lbl="Dias com dado" valor={`${linhas.length} dias`} />
           <Card lbl="Média diária" valor={kwh2(Math.round(total / Math.max(1, linhas.length)))} />
-          <Card lbl="Média de horas" valor={`${casas(linhas.reduce((a, l) => a + l.horas, 0) / Math.max(1, linhas.length), 2, 2)} h/dia`} ultimo />
+          <Card lbl="Média de horas" valor={`${casas(linhas.reduce((a, l) => a + l.horas, 0) / Math.max(1, linhas.length), 2, 2)} h/dia`} ultimo={!tarifa} />
+          {tarifa ? <Card lbl="Receita do período" valor={brl(linhas.reduce((a, l) => a + (l.receita ?? 0), 0))} ultimo /> : null}
         </View>
+        {tarifa ? <Text style={s.nota}>A receita de cada dia é a geração do dia x {tarifaTxt(tarifa)}. A soma dos dias pode diferir alguns centavos do valor oficial do período, que é calculado sobre o total.</Text> : null}
+        <Assinatura e={r.empresa} emitido={emitido} />
       </View>
       <Rodape e={r.empresa} emitido={emitido} />
     </Page>
@@ -262,6 +281,7 @@ export function RelatorioInvestidorPdf({ r }: { r: RelatorioInvestidor }) {
             <Card lbl="Performance vs estimado" valor={performance !== null ? `${num(performance * 100, 1)}%` : "-"} ultimo />
           </View>
           <View style={s.tab}>
+            {x.tarifa_aferida ? <Linha2 a="Tarifa aferida" b={tarifaTxt(x.tarifa_aferida)} /> : null}
             {x.tarifa_kwh ? <Linha2 a="Tarifa contratada" b={tarifaTxt(x.tarifa_kwh)} /> : null}
             <Linha2 a={inteira ? "Receita do período" : "Sua receita do período"} b={brl(receita)} />
             {aporte > 0 ? <Linha2 a="Aporte" b={brl(aporte)} /> : null}
@@ -306,11 +326,11 @@ export function RelatorioInvestidorPdf({ r }: { r: RelatorioInvestidor }) {
           <Grafico dados={r.historico} />
           <View style={s.tab}>
             <View style={s.th}>
-              <Text style={[s.thTxt, { flex: 2 }]}>Mês (últimos 6)</Text>
+              <Text style={[s.thTxt, { flex: 2 }]}>Mês (últimos 4)</Text>
               <Text style={[s.thTxt, s.dir, { flex: 2 }]}>{inteira ? "Geração" : "Sua geração"}</Text>
               <Text style={[s.thTxt, s.dir, { flex: 2 }]}>Receita</Text>
             </View>
-            {[...r.historico].reverse().slice(0, 6).map((h, i, l) => (
+            {[...r.historico].reverse().slice(0, 4).map((h, i, l) => (
               <View key={h.comp} style={[s.tr, i === l.length - 1 ? s.trUlt : {}]}>
                 <Text style={{ flex: 2 }}>{mesLongo(h.comp)}</Text>
                 <Text style={[s.dir, { flex: 2 }]}>{kwh2(h.geracao_wh)}</Text>
@@ -331,6 +351,7 @@ export function RelatorioInvestidorPdf({ r }: { r: RelatorioInvestidor }) {
           <Text style={s.nota}>
             Relatório emitido pela {(e.razaoSocial || e.empresa)}, com o mês fechado pela equipe em {dataBr(f.fechado_em)}. Valores passados não garantem resultados futuros. Dúvidas: fale com a {e.empresa} pelos canais abaixo ou pelo app.
           </Text>
+          {r.dias.length === 0 && <Assinatura e={e} emitido={emitido} />}
         </View>
         <Rodape e={e} emitido={emitido} />
       </Page>

@@ -30,6 +30,9 @@ export type Settings = {
   cdiPeriodo: number;
   fiiPeriodo: number;
   poupancaPeriodo: number;
+  // Quem assina o relatório do investidor (nome e cargo), no fim do PDF.
+  responsavel: string;
+  responsavelCargo: string;
 };
 
 const taxa = (v: unknown, padrao: number) => {
@@ -62,6 +65,8 @@ export async function getSettings(): Promise<Settings> {
     cdiPeriodo: taxa(d.cdiPeriodo, 12_250),
     fiiPeriodo: taxa(d.fiiPeriodo, 9_000),
     poupancaPeriodo: taxa(d.poupancaPeriodo, 6_750),
+    responsavel: typeof d.responsavel === "string" ? d.responsavel.trim().slice(0, 80) : "",
+    responsavelCargo: typeof d.responsavelCargo === "string" ? d.responsavelCargo.trim().slice(0, 60) : "",
   };
 }
 

@@ -48,6 +48,9 @@ export async function salvarUsina(fd: FormData) {
   if (!Number.isInteger(qtd) || qtd < 0 || qtd > 100000) redirect(`${volta}?erro=qtd`);
   if (esperadaTxt && !esperada) redirect(`${volta}?erro=esperada`);
   if (tarifaTxt && !tarifa) redirect(`${volta}?erro=tarifa`);
+  const aferidaTxt = String(fd.get("aferida") ?? "").trim();
+  const aferida = aferidaTxt ? tarifaDe(aferidaTxt) : null;
+  if (aferidaTxt && !aferida) redirect(`${volta}?erro=aferida`);
   const monTipo = fd.get("mon_tipo") === "solis" ? "solis" : "";
   const monId = monTipo ? texto(fd, "mon_id", 40) : "";
   if (monTipo && !/^\d{1,40}$/.test(monId)) redirect(`${volta}?erro=integracao`);
@@ -57,7 +60,7 @@ export async function salvarUsina(fd: FormData) {
   if (id) {
     const r = await sql`
       UPDATE usinas SET nome = ${nome}, cidade = ${cidade}, uf = ${uf}, capacidade_wp = ${capacidade}, investimento_centavos = ${investimento},
-        status = ${status}, operando_desde = ${desde}, inversor_marca = ${marca}, inversor_modelo = ${modelo}, inversor_qtd = ${qtd}, monitoramento = ${monitoramento}, geracao_esperada_wh = ${esperada}, tarifa_kwh = ${tarifa},
+        status = ${status}, operando_desde = ${desde}, inversor_marca = ${marca}, inversor_modelo = ${modelo}, inversor_qtd = ${qtd}, monitoramento = ${monitoramento}, geracao_esperada_wh = ${esperada}, tarifa_kwh = ${tarifa}, tarifa_aferida = ${aferida},
         monitoramento_sinc = CASE WHEN monitoramento_id = ${monId} AND monitoramento_tipo = ${monTipo} THEN monitoramento_sinc END, monitoramento_tipo = ${monTipo}, monitoramento_id = ${monId}
       WHERE id = ${id} RETURNING id`;
     if (!r.length) redirect("/painel/usinas");
@@ -65,8 +68,8 @@ export async function salvarUsina(fd: FormData) {
     redirect(`/painel/usinas/${id}?ok=usina`);
   }
   const [n] = await sql<{ id: number }[]>`
-    INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh, monitoramento_tipo, monitoramento_id)
-    VALUES (${nome}, ${cidade}, ${uf}, ${capacidade}, ${investimento}, ${status}, ${desde}, ${marca}, ${modelo}, ${qtd}, ${monitoramento}, ${esperada}, ${tarifa}, ${monTipo}, ${monId}) RETURNING id`;
+    INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh, tarifa_aferida, monitoramento_tipo, monitoramento_id)
+    VALUES (${nome}, ${cidade}, ${uf}, ${capacidade}, ${investimento}, ${status}, ${desde}, ${marca}, ${modelo}, ${qtd}, ${monitoramento}, ${esperada}, ${tarifa}, ${aferida}, ${monTipo}, ${monId}) RETURNING id`;
   await audit(`usuario:${u.id}`, "usina_criada", "usina", n.id, nome);
   redirect(`/painel/usinas/${n.id}?ok=usina`);
 }
