@@ -22,6 +22,19 @@ export type Settings = {
   prazoRepasse: number;
   // Plus: agente de IA (painel e app). Padrão ligado; sem GROQ_API_KEY ele avisa que não está configurado.
   agente: boolean;
+  // Dia em que começa o período de apuração (1 = mês do calendário; 21 = de 21
+  // do mês anterior a 20 do mês da competência, como a HAV faz).
+  inicioPeriodo: number;
+  // Comparativo do relatório: rendimento de cada aplicação no período, em ppm
+  // (1,225% = 12250). A equipe atualiza em Configurações.
+  cdiPeriodo: number;
+  fiiPeriodo: number;
+  poupancaPeriodo: number;
+};
+
+const taxa = (v: unknown, padrao: number) => {
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 0 && n <= 200_000 ? n : padrao;
 };
 
 export const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,24}$/i;
@@ -32,6 +45,7 @@ export async function getSettings(): Promise<Settings> {
   const d = row?.dados ?? {};
   const dia = Number(d.diaFechamento);
   const prazo = Number(d.prazoRepasse);
+  const inicio = Number(d.inicioPeriodo);
   return {
     empresa: typeof d.empresa === "string" && d.empresa.trim() ? d.empresa.trim().slice(0, 40) : "HAV Energia",
     razaoSocial: typeof d.razaoSocial === "string" ? d.razaoSocial.trim().slice(0, 100) : "",
@@ -44,6 +58,10 @@ export async function getSettings(): Promise<Settings> {
     projecaoApp: d.projecaoApp === true,
     agente: d.agente !== false,
     prazoRepasse: Number.isInteger(prazo) && prazo >= 1 && prazo <= 60 ? prazo : 10,
+    inicioPeriodo: Number.isInteger(inicio) && inicio >= 1 && inicio <= 28 ? inicio : 21,
+    cdiPeriodo: taxa(d.cdiPeriodo, 12_250),
+    fiiPeriodo: taxa(d.fiiPeriodo, 9_000),
+    poupancaPeriodo: taxa(d.poupancaPeriodo, 6_750),
   };
 }
 

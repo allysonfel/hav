@@ -73,9 +73,9 @@ export async function carregarDemo(adminId: number): Promise<void> {
 
     for (const u of USINAS) {
       const [us] = await tx<{ id: number }[]>`
-        INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh)
+        INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh)
         VALUES (${u.nome}, ${u.cidade}, ${u.uf}, ${u.kwp * 1000}, ${u.invest * 100}, ${u.status}, ${u.desde ? u.desde + "-01" : null}, ${u.marca}, ${u.modelo}, ${u.qtd}, ${u.mon},
-          ${u.status === "operando" ? u.kwp * 125_000 : null})
+          ${u.status === "operando" ? u.kwp * 125_000 : null}, ${u.status === "operando" ? 5000 : null})
         RETURNING id`;
       await marca("usinas", us.id);
       const cotas = Object.entries(COTAS[u.nome]).map(([k, valor]) => ({ investidor: inv[k], valor, ppm: Math.round((valor / u.invest) * 1_000_000) }));
@@ -98,11 +98,12 @@ export async function carregarDemo(adminId: number): Promise<void> {
           ? Math.round(u.ultimo * (u.curva[6 - m] / 120))
           : Math.round(u.ultimo * (SAZONAL[mes] / SAZONAL[Number(ultimoFechado.slice(5, 7)) - 1]) * (m > 12 ? 0.94 : 0.98) * (1 + (((m * (u.nome.length + 3)) % 9) - 4) / 100) * u.fator);
         const wh = kwh * 1000;
-        const centavos = kwh * 50; // R$ 0,50 por kWh, como no protótipo
+        const centavos = kwh * 50; // R$ 0,50 por kWh, como no protótipo (tarifa_kwh 5000)
+        const disp = 960_000 + ((m * 7 + u.nome.length) % 35) * 1000; // 96% a 99,4%
         const fechadoEm = new Date(`${somarMeses(comp, 1)}-02T12:00:00-03:00`);
         const [f] = await tx<{ id: number }[]>`
-          INSERT INTO fechamentos (usina_id, competencia, geracao_wh, receita_centavos, status, lancado_por, fechado_por, lancado_em, fechado_em)
-          VALUES (${us.id}, ${comp + "-01"}, ${wh}, ${centavos}, 'fechado', ${adminId}, ${adminId}, ${fechadoEm}, ${fechadoEm}) RETURNING id`;
+          INSERT INTO fechamentos (usina_id, competencia, geracao_wh, receita_centavos, tarifa_kwh, disponibilidade_ppm, status, lancado_por, fechado_por, lancado_em, fechado_em)
+          VALUES (${us.id}, ${comp + "-01"}, ${wh}, ${centavos}, 5000, ${disp}, 'fechado', ${adminId}, ${adminId}, ${fechadoEm}, ${fechadoEm}) RETURNING id`;
         await marca("fechamentos", f.id);
         const g = dividir(wh, ppms);
         const r = dividir(centavos, ppms);

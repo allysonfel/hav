@@ -130,3 +130,34 @@ export function fmtMetrica(f: Formato, v: number, curto = false): string {
   if (f === "prod") return `${num(v, 1)} kWh/kWp`;
   return `R$ ${num(v / 100, 2)}/kWp`;
 }
+
+// Valor pago por kWh, guardado em décimos de milésimo de real (R$ 0,56 = 5600).
+export const tarifaDe = (v: unknown) => {
+  const t = naFaixa(v, 10_000, 1_000_000); // até R$ 100/kWh
+  return t && t > 0 ? t : null;
+};
+export const tarifaTxt = (t: number) =>
+  `R$ ${(t / 10_000).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}/kWh`;
+// Receita = geração x tarifa, em centavos, arredondada para baixo (como a HAV
+// faz à mão: 13.458,32 kWh x 0,56 = R$ 7.536,65).
+export const receitaPorTarifa = (wh: number, tarifa: number) => Number((BigInt(wh) * BigInt(tarifa)) / 100_000n);
+
+// Período de apuração de uma competência. inicio = 1: o mês do calendário.
+// inicio 2 a 28: do dia inicio do mês anterior ao dia inicio - 1 do mês da
+// competência (inicio 21, setembro = 21/08 a 20/09).
+export function periodo(comp: string, inicio: number): { ini: string; fim: string; dias: number } {
+  const ano = Number(comp.slice(0, 4)), mes = Number(comp.slice(5, 7));
+  const ini = inicio > 1 ? new Date(Date.UTC(ano, mes - 2, inicio)) : new Date(Date.UTC(ano, mes - 1, 1));
+  const fim = inicio > 1 ? new Date(Date.UTC(ano, mes - 1, inicio - 1)) : new Date(Date.UTC(ano, mes, 0));
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  return { ini: iso(ini), fim: iso(fim), dias: Math.round((fim.getTime() - ini.getTime()) / 86_400_000) + 1 };
+}
+const dmy = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+export const periodoTexto = (comp: string, inicio: number) => {
+  const p = periodo(comp, inicio);
+  return `${dmy(p.ini)} a ${dmy(p.fim)}`;
+};
+export const periodoCurto = (comp: string, inicio: number) => {
+  const p = periodo(comp, inicio);
+  return `${dmy(p.ini).slice(0, 5)} a ${dmy(p.fim).slice(0, 5)}`;
+};

@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/session";
 import { EMAIL, getSettings, saveSettings } from "@/lib/settings";
 import { audit } from "@/lib/audit";
 import { cnpjFormatado, cnpjValido } from "@/lib/cpf";
+import { campoDecimal, periodoTexto, ppmDe } from "@/lib/format";
 import { Retorno } from "@/components/basicos";
 import { emailConfigurado } from "@/lib/email";
 import { iaConfigurada } from "@/lib/ia";
@@ -30,7 +31,15 @@ async function salvar(fd: FormData) {
   const emailRelatorio = fd.get("email_relatorio") === "1";
   const projecaoApp = fd.get("projecao_app") === "1";
   const agente = fd.get("agente") === "1";
-  await saveSettings({ empresa, razaoSocial, cnpj, diaFechamento, prazoRepasse, suporteWhatsapp, suporteEmail, oportunidades, emailRelatorio, projecaoApp, agente });
+  const inicioPeriodo = Number(fd.get("inicio_periodo"));
+  if (!Number.isInteger(inicioPeriodo) || inicioPeriodo < 1 || inicioPeriodo > 28) redirect("/painel/configuracoes?erro=1");
+  const taxaDe = (campo: string) => {
+    const n = ppmDe(fd.get(campo));
+    return n !== null && n <= 200_000 ? n : null;
+  };
+  const cdiPeriodo = taxaDe("cdi"), fiiPeriodo = taxaDe("fii"), poupancaPeriodo = taxaDe("poupanca");
+  if (cdiPeriodo === null || fiiPeriodo === null || poupancaPeriodo === null) redirect("/painel/configuracoes?erro=1");
+  await saveSettings({ empresa, razaoSocial, cnpj, diaFechamento, prazoRepasse, suporteWhatsapp, suporteEmail, oportunidades, emailRelatorio, projecaoApp, agente, inicioPeriodo, cdiPeriodo, fiiPeriodo, poupancaPeriodo });
   const lig = (b: boolean) => (b ? "ligada" : "desligada");
   await audit(`usuario:${u.id}`, "configuracoes_salvas", null, null,
     `oportunidades ${lig(oportunidades)}; email ${lig(emailRelatorio)}; projecao no app ${lig(projecaoApp)}; agente ${lig(agente)}`);
@@ -44,7 +53,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
   const demo = await demoAtiva();
   return (
     <>
-      <Retorno ok={sp.ok} erro={sp.erro} mapaOk={{ "1": "Configurações salvas." }} mapaErro={{ "1": "Confira os dados (CNPJ, WhatsApp, e-mail ou prazo inválido)." }} />
+      <Retorno ok={sp.ok} erro={sp.erro} mapaOk={{ "1": "Configurações salvas." }} mapaErro={{ "1": "Confira os dados (CNPJ, WhatsApp, e-mail, prazo ou taxas do comparativo inválidos)." }} />
       <form action={salvar} className="card card-p" style={{ maxWidth: 640 }}>
         <h4 style={{ margin: "0 0 14px" }}>Sistema</h4>
         <div className="field"><label htmlFor="empresa">Nome da empresa</label><input id="empresa" name="empresa" defaultValue={s.empresa} required maxLength={40} /></div>
@@ -57,6 +66,14 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
             {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => <option key={d} value={d}>Dia {d} do mês seguinte</option>)}
           </select>
           <small>Define quando o sino começa a cobrar o lançamento do mês.</small>
+        </div>
+        <div className="field">
+          <label htmlFor="inicio_periodo">Período de apuração da geração</label>
+          <select id="inicio_periodo" name="inicio_periodo" defaultValue={s.inicioPeriodo}>
+            <option value={1}>Do dia 1 ao último dia do mês</option>
+            {Array.from({ length: 27 }, (_, i) => i + 2).map((d) => <option key={d} value={d}>Do dia {d} ao dia {d - 1} do mês seguinte</option>)}
+          </select>
+          <small>Exemplo com a configuração atual: o mês de setembro de 2026 vai de {periodoTexto("2026-09", s.inicioPeriodo)}. Aparece no lançamento, nos relatórios e no app.</small>
         </div>
         <div className="field">
           <label htmlFor="prazo">Prazo para pagar os repasses</label>
@@ -90,6 +107,13 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
           <b>Agente de IA no painel e no app</b>
         </label>
         <p className="muted sm" style={{ margin: "0 0 14px" }}>Responde dúvidas com os dados do sistema, respeitando o que cada perfil pode ver.{iaConfigurada() ? "" : " Atenção: a chave de IA ainda não está configurada no servidor."}</p>
+        <div className="box-title">Comparativo do relatório do investidor</div>
+        <p className="muted sm" style={{ margin: "0 0 10px" }}>Quanto cada aplicação rende num período de apuração, em %. O relatório mostra quanto o mesmo valor investido teria rendido em cada uma. Atualize quando as taxas mudarem.</p>
+        <div className="form-grid">
+          <div className="field"><label htmlFor="cdi">CDI / CDB 100% CDI (% no período)</label><input id="cdi" name="cdi" defaultValue={campoDecimal(s.cdiPeriodo / 10_000, 4)} required inputMode="decimal" /></div>
+          <div className="field"><label htmlFor="fii">Fundos imobiliários, média (% no período)</label><input id="fii" name="fii" defaultValue={campoDecimal(s.fiiPeriodo / 10_000, 4)} required inputMode="decimal" /></div>
+          <div className="field"><label htmlFor="poupanca">Poupança (% no período)</label><input id="poupanca" name="poupanca" defaultValue={campoDecimal(s.poupancaPeriodo / 10_000, 4)} required inputMode="decimal" /></div>
+        </div>
         <div className="field"><label>Fuso horário</label><input value="América/Recife (UTC-3)" disabled readOnly /></div>
         <button className="btn btn-primary">Salvar alterações</button>
       </form>

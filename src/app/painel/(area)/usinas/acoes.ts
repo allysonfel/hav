@@ -8,7 +8,7 @@ import { cancelarPendentes, enfileirar, processarFila, reenviar } from "@/lib/en
 import { sql } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { audit } from "@/lib/audit";
-import { COMPETENCIA, centavosDe, mesAno, mesAtual, mesLongo, ppmDe, whDe, wpDe } from "@/lib/format";
+import { COMPETENCIA, centavosDe, mesAno, mesAtual, mesLongo, ppmDe, receitaPorTarifa, tarifaDe, whDe, wpDe } from "@/lib/format";
 import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
 import { COMPROVANTE_MAX, nomeSeguro, tipoComprovante } from "@/lib/comprovantes";
 
@@ -37,27 +37,30 @@ export async function salvarUsina(fd: FormData) {
   const monitoramento = texto(fd, "monitoramento", 120);
   const esperadaTxt = String(fd.get("esperada") ?? "").trim();
   const esperada = esperadaTxt ? whDe(esperadaTxt) : null;
+  const tarifaTxt = String(fd.get("tarifa") ?? "").trim();
+  const tarifa = tarifaTxt ? tarifaDe(tarifaTxt) : null;
   if (nome.length < 2) redirect(`${volta}?erro=nome`);
   if (uf && !/^[A-Z]{2}$/.test(uf)) redirect(`${volta}?erro=uf`);
   if (!capacidade) redirect(`${volta}?erro=capacidade`);
   if (!investimento) redirect(`${volta}?erro=investimento`);
   if (!Number.isInteger(qtd) || qtd < 0 || qtd > 100000) redirect(`${volta}?erro=qtd`);
   if (esperadaTxt && !esperada) redirect(`${volta}?erro=esperada`);
+  if (tarifaTxt && !tarifa) redirect(`${volta}?erro=tarifa`);
   const [mesmoNome] = await sql`SELECT 1 FROM usinas WHERE nome = ${nome} AND id <> ${id}`;
   if (mesmoNome) redirect(`${volta}?erro=duplicada`);
 
   if (id) {
     const r = await sql`
       UPDATE usinas SET nome = ${nome}, cidade = ${cidade}, uf = ${uf}, capacidade_wp = ${capacidade}, investimento_centavos = ${investimento},
-        status = ${status}, operando_desde = ${desde}, inversor_marca = ${marca}, inversor_modelo = ${modelo}, inversor_qtd = ${qtd}, monitoramento = ${monitoramento}, geracao_esperada_wh = ${esperada}
+        status = ${status}, operando_desde = ${desde}, inversor_marca = ${marca}, inversor_modelo = ${modelo}, inversor_qtd = ${qtd}, monitoramento = ${monitoramento}, geracao_esperada_wh = ${esperada}, tarifa_kwh = ${tarifa}
       WHERE id = ${id} RETURNING id`;
     if (!r.length) redirect("/painel/usinas");
     await audit(`usuario:${u.id}`, "usina_editada", "usina", id, nome);
     redirect(`/painel/usinas/${id}?ok=usina`);
   }
   const [n] = await sql<{ id: number }[]>`
-    INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh)
-    VALUES (${nome}, ${cidade}, ${uf}, ${capacidade}, ${investimento}, ${status}, ${desde}, ${marca}, ${modelo}, ${qtd}, ${monitoramento}, ${esperada}) RETURNING id`;
+    INSERT INTO usinas (nome, cidade, uf, capacidade_wp, investimento_centavos, status, operando_desde, inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh, tarifa_kwh)
+    VALUES (${nome}, ${cidade}, ${uf}, ${capacidade}, ${investimento}, ${status}, ${desde}, ${marca}, ${modelo}, ${qtd}, ${monitoramento}, ${esperada}, ${tarifa}) RETURNING id`;
   await audit(`usuario:${u.id}`, "usina_criada", "usina", n.id, nome);
   redirect(`/painel/usinas/${n.id}?ok=usina`);
 }
@@ -119,18 +122,23 @@ export async function lancarGeracao(fd: FormData) {
   const usinaId = idDe(fd.get("usina"));
   const comp = String(fd.get("comp") ?? "");
   const wh = whDe(fd.get("geracao"));
-  const receita = centavosDe(fd.get("receita"));
+  const dispTxt = String(fd.get("disponibilidade") ?? "").trim();
+  const disp = dispTxt ? ppmDe(dispTxt) : null;
   const volta = `/painel/usinas/${usinaId}/lancar`;
   if (!COMPETENCIA.test(comp) || comp > mesAtual()) redirect(`${volta}?erro=mes`);
   if (wh === null) redirect(`${volta}?erro=geracao&comp=${comp}`);
-  if (receita === null) redirect(`${volta}?erro=receita&comp=${comp}`);
-  const [usina] = await sql`SELECT 1 FROM usinas WHERE id = ${usinaId} AND status <> 'captacao'`;
+  if (dispTxt && disp === null) redirect(`${volta}?erro=disponibilidade&comp=${comp}`);
+  const [usina] = await sql<{ tarifa_kwh: number | null }[]>`SELECT tarifa_kwh FROM usinas WHERE id = ${usinaId} AND status <> 'captacao'`;
   if (!usina) redirect("/painel/usinas");
+  // Com valor por kWh na usina, a receita sai da geração; sem ele, vem digitada.
+  const tarifa = usina.tarifa_kwh;
+  const receita = tarifa ? receitaPorTarifa(wh, tarifa) : centavosDe(fd.get("receita"));
+  if (receita === null) redirect(`${volta}?erro=receita&comp=${comp}`);
   const [f] = await sql<{ id: number }[]>`
-    INSERT INTO fechamentos (usina_id, competencia, geracao_wh, receita_centavos, lancado_por)
-    VALUES (${usinaId}, ${comp + "-01"}::date, ${wh}, ${receita}, ${u.id})
+    INSERT INTO fechamentos (usina_id, competencia, geracao_wh, receita_centavos, tarifa_kwh, disponibilidade_ppm, lancado_por)
+    VALUES (${usinaId}, ${comp + "-01"}::date, ${wh}, ${receita}, ${tarifa}, ${disp}, ${u.id})
     ON CONFLICT (usina_id, competencia) DO UPDATE
-      SET geracao_wh = ${wh}, receita_centavos = ${receita}, lancado_por = ${u.id}, lancado_em = now()
+      SET geracao_wh = ${wh}, receita_centavos = ${receita}, tarifa_kwh = ${tarifa}, disponibilidade_ppm = ${disp}, lancado_por = ${u.id}, lancado_em = now()
       WHERE fechamentos.status = 'rascunho'
     RETURNING id`;
   if (!f) redirect(`${volta}?erro=fechado&comp=${comp}`);

@@ -230,6 +230,18 @@ CREATE TABLE IF NOT EXISTS comprovantes (
   enviado_por INT REFERENCES usuarios(id),
   criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Valor pago por kWh gerado, por usina, em décimos de milésimo de real
+-- (R$ 0,56 = 5600). Com ele a receita do mês sai da geração. Opcional: sem
+-- valor, a equipe lança a receita em reais como antes. O fechamento guarda a
+-- tarifa usada, para o histórico não mudar se a tarifa mudar depois.
+ALTER TABLE usinas ADD COLUMN IF NOT EXISTS tarifa_kwh INT CHECK (tarifa_kwh IS NULL OR tarifa_kwh BETWEEN 1 AND 1000000);
+ALTER TABLE fechamentos ADD COLUMN IF NOT EXISTS tarifa_kwh INT CHECK (tarifa_kwh IS NULL OR tarifa_kwh BETWEEN 1 AND 1000000);
+-- Disponibilidade da usina no período (do app de monitoramento), em ppm. Opcional.
+ALTER TABLE fechamentos ADD COLUMN IF NOT EXISTS disponibilidade_ppm INT CHECK (disponibilidade_ppm IS NULL OR disponibilidade_ppm BETWEEN 0 AND 1000000);
+-- Conta bancária do investidor para o repasse (banco, agência, conta),
+-- criptografada como a chave Pix.
+ALTER TABLE investidores ADD COLUMN IF NOT EXISTS conta_cifrada TEXT;
 `;
 
 let pronto: Promise<void> | null = null;

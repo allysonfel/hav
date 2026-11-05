@@ -7,6 +7,7 @@ import { sql } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { audit } from "@/lib/audit";
 import { cifrar, hashDocumento } from "@/lib/cifra";
+import { cifrarConta, contaDoForm } from "@/lib/contaBancaria";
 import { celularValido, cnpjValido, cpfValido, soDigitos } from "@/lib/cpf";
 import { EMAIL } from "@/lib/settings";
 import { criarLink, enviarLink, VALIDADE } from "@/lib/acesso";
@@ -28,6 +29,8 @@ export async function salvarInvestidor(fd: FormData) {
   if (!EMAIL.test(email)) redirect(`${volta}?erro=email`);
   if (celular === null) redirect(`${volta}?erro=celular`);
   if (documento === null) redirect(`${volta}?erro=documento`);
+  const conta = contaDoForm(fd);
+  if (conta === "incompleta") redirect(`${volta}?erro=conta`);
 
   const hash = documento ? hashDocumento(documento) : null;
   const [dupEmail] = await sql`SELECT 1 FROM investidores WHERE email = ${email} AND id <> ${id}`;
@@ -41,12 +44,13 @@ export async function salvarInvestidor(fd: FormData) {
     documento_hash: hash,
     documento_final: documento ? documento.slice(-2) : "",
     pix_cifrado: pix ? cifrar(pix) : null,
+    conta_cifrada: cifrarConta(conta),
   };
   if (id) {
     // Trocar o e-mail derruba a sessão do app: o login muda.
     const r = await sql`
       UPDATE investidores SET nome = ${nome}, email = ${email}, celular = ${celular}, documento_cifrado = ${campos.documento_cifrado},
-        documento_hash = ${campos.documento_hash}, documento_final = ${campos.documento_final}, pix_cifrado = ${campos.pix_cifrado},
+        documento_hash = ${campos.documento_hash}, documento_final = ${campos.documento_final}, pix_cifrado = ${campos.pix_cifrado}, conta_cifrada = ${campos.conta_cifrada},
         sessao_versao = CASE WHEN email = ${email} THEN sessao_versao ELSE sessao_versao + 1 END
       WHERE id = ${id} RETURNING id`;
     if (!r.length) redirect("/painel/investidores");
@@ -54,8 +58,8 @@ export async function salvarInvestidor(fd: FormData) {
     redirect(`/painel/investidores/${id}?ok=salvo`);
   }
   const [n] = await sql<{ id: number }[]>`
-    INSERT INTO investidores (nome, email, celular, documento_cifrado, documento_hash, documento_final, pix_cifrado)
-    VALUES (${nome}, ${email}, ${celular}, ${campos.documento_cifrado}, ${campos.documento_hash}, ${campos.documento_final}, ${campos.pix_cifrado}) RETURNING id`;
+    INSERT INTO investidores (nome, email, celular, documento_cifrado, documento_hash, documento_final, pix_cifrado, conta_cifrada)
+    VALUES (${nome}, ${email}, ${celular}, ${campos.documento_cifrado}, ${campos.documento_hash}, ${campos.documento_final}, ${campos.pix_cifrado}, ${campos.conta_cifrada}) RETURNING id`;
   await audit(`usuario:${u.id}`, "investidor_criado", "investidor", n.id);
   redirect(`/painel/investidores/${n.id}?ok=salvo`);
 }

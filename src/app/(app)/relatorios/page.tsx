@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireInvestidor } from "@/lib/investidor";
 import { meusRelatorios } from "@/lib/app";
-import { brl, dataBr, kwh, mesLongo } from "@/lib/format";
+import { brl, dataBr, kwh, mesLongo, periodoTexto } from "@/lib/format";
 import { nomeCurtoUsina } from "@/lib/investidores";
 import { Ic } from "@/components/Ic";
 import { getSettings } from "@/lib/settings";
@@ -31,6 +31,7 @@ export default async function Relatorios({ searchParams }: { searchParams: Promi
               <div className="ic"><Ic n="relatorios" /></div>
               <div className="meta">
                 <b>Relatório de {mesLongo(r.comp)}</b>
+                <span>{periodoTexto(r.comp, cfg.inicioPeriodo)}</span>
                 <span>{kwh(r.geracao_wh)} · {brl(r.receita_centavos)} · emitido em {dataBr(r.fechado_em).slice(0, 5)}</span>
                 {r.repasse_status === "pago" ? (
                   <span className="ok-txt">

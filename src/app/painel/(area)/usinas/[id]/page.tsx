@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser, eAdmin } from "@/lib/session";
 import { sql } from "@/lib/db";
 import { local, serieMensal, type StatusUsina } from "@/lib/usinas";
-import { brl, brl0, kwh, kwp, mesAno, pct } from "@/lib/format";
+import { brl, brl0, kwh, kwp, mesAno, pct, tarifaTxt } from "@/lib/format";
 import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
 import { Historico, Kpi, PillUsina, Progresso, Retorno } from "@/components/basicos";
 import { historicoUsinas, periodoDe } from "@/lib/historico";
@@ -24,9 +24,9 @@ export default async function Usina({ params, searchParams }: { params: Promise<
   const id = Number((await params).id);
   const sp = await searchParams;
   if (!Number.isInteger(id) || id < 1) notFound();
-  const [u] = await sql<{ id: number; nome: string; cidade: string; uf: string; capacidade_wp: number; investimento_centavos: number; status: StatusUsina; desde: string | null; inversor_marca: string; inversor_modelo: string; inversor_qtd: number; monitoramento: string; geracao_esperada_wh: number | null }[]>`
+  const [u] = await sql<{ id: number; nome: string; cidade: string; uf: string; capacidade_wp: number; investimento_centavos: number; status: StatusUsina; desde: string | null; inversor_marca: string; inversor_modelo: string; inversor_qtd: number; monitoramento: string; geracao_esperada_wh: number | null; tarifa_kwh: number | null }[]>`
     SELECT id, nome, cidade, uf, capacidade_wp, investimento_centavos, status, to_char(operando_desde, 'YYYY-MM') AS desde,
-      inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh::float8 AS geracao_esperada_wh
+      inversor_marca, inversor_modelo, inversor_qtd, monitoramento, geracao_esperada_wh::float8 AS geracao_esperada_wh, tarifa_kwh
     FROM usinas WHERE id = ${id}`;
   if (!u) notFound();
 
@@ -75,7 +75,8 @@ export default async function Usina({ params, searchParams }: { params: Promise<
           {verValores && <Kpi label={u.status === "captacao" ? "Meta" : "Investimento total"} valor={brl0(u.investimento_centavos)} />}
           <Kpi label={atual ? `Geração (${mesAno(atual.comp)})` : "Geração"} valor={atual ? kwh(atual.geracao_wh) : "—"}
             delta={sit ? `${sit.abaixo ? "↓" : "✓"} ${sit.texto}` : esperada ? undefined : admin ? "Cadastre a geração esperada em Editar" : undefined} neutro={!sit || sit.abaixo} />
-          <Kpi label="Receita distribuída" valor={atual ? brl0(atual.receita_centavos) : "—"} />
+          <Kpi label="Receita distribuída" valor={atual ? brl0(atual.receita_centavos) : "—"}
+            delta={u.tarifa_kwh ? `${tarifaTxt(u.tarifa_kwh)} gerado` : admin && u.status !== "captacao" ? "Cadastre o valor por kWh em Editar" : undefined} neutro />
         </div>
         <div className="section-head" style={{ marginBottom: 10 }}>
           <span className="hint">Histórico{hist.projGeracao.length ? " e projeção dos próximos 3 meses" : ""}</span>

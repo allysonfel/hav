@@ -15,6 +15,7 @@ export type UsinaForm = {
   inversor_qtd: number;
   monitoramento: string;
   geracao_esperada_wh: number | null;
+  tarifa_kwh: number | null;
 };
 
 export function FormUsina({ usina, status }: { usina?: UsinaForm; status?: string }) {
@@ -42,6 +43,11 @@ export function FormUsina({ usina, status }: { usina?: UsinaForm; status?: strin
         </div>
         <div className="field"><label htmlFor="desde">Operando desde</label><input id="desde" name="desde" type="month" defaultValue={usina?.desde ?? ""} /></div>
         <div className="field inteiro">
+          <label htmlFor="tarifa">Valor pago por kWh gerado (R$)</label>
+          <input id="tarifa" name="tarifa" defaultValue={usina?.tarifa_kwh ? campoDecimal(usina.tarifa_kwh / 10_000, 4) : ""} inputMode="decimal" placeholder="0,56" />
+          <small>Com ele, a receita do mês é calculada sozinha: geração x este valor, e cada cotista recebe a parte da própria cota. Sem ele, a receita é digitada no lançamento.</small>
+        </div>
+        <div className="field inteiro">
           <label htmlFor="esperada">Geração esperada por mês (kWh, opcional)</label>
           <input id="esperada" name="esperada" defaultValue={usina?.geracao_esperada_wh ? campoDecimal(usina.geracao_esperada_wh / 1000, 0) : ""} inputMode="decimal" placeholder="135.000" />
           <small>Média mensal do projeto da usina. Com ela, o sistema mostra quanto do esperado a usina gerou e avisa quando ficar abaixo de 85%.</small>
@@ -65,6 +71,7 @@ export const ERROS_USINA: Record<string, string> = {
   capacidade: "Informe a capacidade em kWp.",
   investimento: "Informe o investimento total.",
   qtd: "Confira a quantidade de inversores.",
+  tarifa: "Confira o valor por kWh (ex.: 0,56).",
   esperada: "Confira a geração esperada por mês (em kWh, a partir de 1).",
   duplicada: "Já existe uma usina com esse nome.",
   movimento: "Esta usina tem cotistas, lançamentos ou interessados e não pode ser excluída. Use o status Pausada.",

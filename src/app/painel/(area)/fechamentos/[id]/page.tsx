@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser, eAdmin } from "@/lib/session";
 import { sql } from "@/lib/db";
-import { brl, kwh, dataBr, mesLongo, pct } from "@/lib/format";
+import { brl, kwh, dataBr, mesLongo, pct, periodoTexto, tarifaTxt } from "@/lib/format";
 import { PPM_TOTAL, dividir, somaPpm } from "@/lib/rateio";
 import { Kpi, Retorno } from "@/components/basicos";
 import { enviarComprovante, fecharMes, marcarRepasse, reabrirMes, reenviarEmail } from "../../usinas/acoes";
@@ -35,8 +35,8 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
   const id = Number((await params).id);
   const sp = await searchParams;
   if (!Number.isInteger(id) || id < 1) notFound();
-  const [f] = await sql<{ id: number; usina_id: number; usina: string; comp: string; geracao_wh: number; receita_centavos: number; status: string; fechado_em: Date | null; quem: string | null; esperada: number | null }[]>`
-    SELECT f.id, f.usina_id, u.nome AS usina, u.geracao_esperada_wh AS esperada, to_char(f.competencia, 'YYYY-MM') AS comp, f.geracao_wh, f.receita_centavos, f.status, f.fechado_em, q.nome AS quem
+  const [f] = await sql<{ id: number; usina_id: number; usina: string; comp: string; geracao_wh: number; receita_centavos: number; status: string; fechado_em: Date | null; quem: string | null; esperada: number | null; tarifa_kwh: number | null; disponibilidade_ppm: number | null }[]>`
+    SELECT f.id, f.usina_id, f.tarifa_kwh, f.disponibilidade_ppm, u.nome AS usina, u.geracao_esperada_wh AS esperada, to_char(f.competencia, 'YYYY-MM') AS comp, f.geracao_wh, f.receita_centavos, f.status, f.fechado_em, q.nome AS quem
     FROM fechamentos f JOIN usinas u ON u.id = f.usina_id LEFT JOIN usuarios q ON q.id = f.fechado_por
     WHERE f.id = ${id}`;
   if (!f) notFound();
@@ -82,7 +82,7 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
             <h3 style={{ fontSize: 17 }}>{mesLongo(f.comp)}</h3>
             {fechado ? <span className="pill pill-ok">Fechado</span> : <span className="pill pill-muted">Rascunho</span>}
           </div>
-          <span className="hint">{f.usina}{f.fechado_em ? ` · fechado em ${dataBr(f.fechado_em)}${f.quem ? ` por ${f.quem}` : ""}` : ""}</span>
+          <span className="hint">{f.usina} · {periodoTexto(f.comp, s.inicioPeriodo)}{f.fechado_em ? ` · fechado em ${dataBr(f.fechado_em)}${f.quem ? ` por ${f.quem}` : ""}` : ""}</span>
         </div>
         <div className="linha">
           {!fechado && <Link className="btn btn-ghost" href={`/painel/usinas/${f.usina_id}/lancar?comp=${f.comp}`}>Corrigir lançamento</Link>}
@@ -95,7 +95,8 @@ export default async function Fechamento({ params, searchParams }: { params: Pro
 
       <div className="kpi-row" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
         <Kpi label="Geração" valor={kwh(f.geracao_wh)} delta={sit ? `${sit.abaixo ? "↓" : "✓"} ${sit.texto}` : undefined} neutro={!sit || sit.abaixo} />
-        <Kpi label="Receita a distribuir" valor={brl(f.receita_centavos)} />
+        <Kpi label="Receita a distribuir" valor={brl(f.receita_centavos)} delta={f.tarifa_kwh ? `geração x ${tarifaTxt(f.tarifa_kwh)}` : undefined} neutro />
+        {f.disponibilidade_ppm != null && <Kpi label="Disponibilidade" valor={pct(f.disponibilidade_ppm)} />}
         <Kpi label="Cotistas" valor={String(linhas.length)} delta={`${pct(soma)} distribuídos`} neutro />
       </div>
 

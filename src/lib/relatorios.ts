@@ -3,23 +3,30 @@
 import "server-only";
 import { sql } from "./db";
 import { getSettings, type Settings } from "./settings";
+import { decifrar } from "./cifra";
+import { abrirConta, type Conta } from "./contaBancaria";
 
 export type RelatorioInvestidor = {
   empresa: Settings;
   investidor: { id: number; nome: string; email: string };
   fechamento: { id: number; comp: string; fechado_em: Date; usina: string; cidade: string; uf: string; capacidade_wp: number; geracao_wh: number; receita_centavos: number };
   rateio: { cota_ppm: number; geracao_wh: number; receita_centavos: number; repasse_status: string; pago_em: Date | null };
+  // Modelo do relatório da HAV: tarifa e disponibilidade do mês, esperado da
+  // usina, valor investido na cota (aporte) e dados para o pagamento.
+  extra: { tarifa_kwh: number | null; disponibilidade_ppm: number | null; esperada_wh: number | null; aporte_centavos: number; pix: string; conta: Conta | null };
   historico: { comp: string; geracao_wh: number; receita_centavos: number }[];
   acumulado_centavos: number;
 };
 
 export async function relatorioInvestidor(fechamentoId: number, investidorId: number): Promise<RelatorioInvestidor | null> {
   type Linha = Omit<RelatorioInvestidor["fechamento"], "geracao_wh" | "receita_centavos"> & RelatorioInvestidor["rateio"]
-    & { usina_id: number; f_geracao: number; f_receita: number; inv_nome: string; inv_email: string };
+    & { usina_id: number; f_geracao: number; f_receita: number; inv_nome: string; inv_email: string; tarifa_kwh: number | null; disponibilidade_ppm: number | null; esperada_wh: number | null; aporte_centavos: number | null; pix_cifrado: string | null; conta_cifrada: string | null };
   const [l] = await sql<Linha[]>`
     SELECT f.id, to_char(f.competencia, 'YYYY-MM') AS comp, f.fechado_em, u.id AS usina_id, u.nome AS usina, u.cidade, u.uf, u.capacidade_wp,
       f.geracao_wh AS f_geracao, f.receita_centavos AS f_receita,
-      r.cota_ppm, r.geracao_wh, r.receita_centavos, r.repasse_status, r.pago_em, i.nome AS inv_nome, i.email AS inv_email
+      r.cota_ppm, r.geracao_wh, r.receita_centavos, r.repasse_status, r.pago_em, i.nome AS inv_nome, i.email AS inv_email,
+      f.tarifa_kwh, f.disponibilidade_ppm, u.geracao_esperada_wh AS esperada_wh, i.pix_cifrado, i.conta_cifrada,
+      (SELECT c.valor_centavos FROM cotas c WHERE c.usina_id = u.id AND c.investidor_id = i.id) AS aporte_centavos
     FROM rateios r JOIN fechamentos f ON f.id = r.fechamento_id JOIN usinas u ON u.id = f.usina_id JOIN investidores i ON i.id = r.investidor_id
     WHERE r.fechamento_id = ${fechamentoId} AND r.investidor_id = ${investidorId} AND f.status = 'fechado'`;
   if (!l) return null;
@@ -37,6 +44,7 @@ export async function relatorioInvestidor(fechamentoId: number, investidorId: nu
     investidor: { id: investidorId, nome: l.inv_nome, email: l.inv_email },
     fechamento: { id: l.id, comp: l.comp, fechado_em: l.fechado_em, usina: l.usina, cidade: l.cidade, uf: l.uf, capacidade_wp: l.capacidade_wp, geracao_wh: l.f_geracao, receita_centavos: l.f_receita },
     rateio: { cota_ppm: l.cota_ppm, geracao_wh: l.geracao_wh, receita_centavos: l.receita_centavos, repasse_status: l.repasse_status, pago_em: l.pago_em },
+    extra: { tarifa_kwh: l.tarifa_kwh, disponibilidade_ppm: l.disponibilidade_ppm, esperada_wh: l.esperada_wh, aporte_centavos: l.aporte_centavos ?? 0, pix: decifrar(l.pix_cifrado), conta: abrirConta(l.conta_cifrada) },
     historico: [...historico].reverse(),
     acumulado_centavos: total,
   };

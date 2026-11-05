@@ -7,6 +7,7 @@ import { sql } from "@/lib/db";
 import { encerrarSessaoInvestidor, getInvestidor, iniciarSessaoInvestidor, requireInvestidor } from "@/lib/investidor";
 import { hashPassword, verifyPassword, SENHA_MINIMA } from "@/lib/auth";
 import { audit } from "@/lib/audit";
+import { cifrarConta, contaDoForm } from "@/lib/contaBancaria";
 import { cifrar } from "@/lib/cifra";
 import { celularValido } from "@/lib/cpf";
 import { centavosDe } from "@/lib/format";
@@ -34,12 +35,15 @@ export async function salvarPix(fd: FormData) {
   const i = await requireInvestidor();
   const pix = String(fd.get("pix") ?? "").trim().slice(0, 140);
   const senha = String(fd.get("senha") ?? "").slice(0, 200);
-  if (pix.length < 5) redirect("/perfil/pix?erro=pix");
+  const conta = contaDoForm(fd);
+  if (conta === "incompleta") redirect("/perfil/pix?erro=conta");
+  if (pix && pix.length < 5) redirect("/perfil/pix?erro=pix");
+  if (!pix && !conta) redirect("/perfil/pix?erro=pix");
   if (!dentroDoLimite(`pix:${i.id}`, 5, 15 * 60_000).ok) redirect("/perfil/pix?erro=limite");
   const [r] = await sql<{ senha_hash: string | null }[]>`SELECT senha_hash FROM investidores WHERE id = ${i.id}`;
   if (!verifyPassword(senha, r?.senha_hash)) redirect("/perfil/pix?erro=senha");
-  await sql`UPDATE investidores SET pix_cifrado = ${cifrar(pix)} WHERE id = ${i.id}`;
-  await audit(`investidor:${i.id}`, "pix_alterado", "investidor", i.id);
+  await sql`UPDATE investidores SET pix_cifrado = ${pix ? cifrar(pix) : null}, conta_cifrada = ${cifrarConta(conta)} WHERE id = ${i.id}`;
+  await audit(`investidor:${i.id}`, "dados_repasse_alterados", "investidor", i.id);
   redirect("/perfil/pix?ok=1");
 }
 

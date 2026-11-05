@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser, eAdmin } from "@/lib/session";
 import { sql } from "@/lib/db";
 import { decifrar } from "@/lib/cifra";
+import { abrirConta, contaTexto } from "@/lib/contaBancaria";
 import { celularFormatado, cnpjFormatado } from "@/lib/cpf";
 import { brl, brl0, dataBr, haQuanto, kwh, mesAno, pct } from "@/lib/format";
 import { Kpi, Retorno } from "@/components/basicos";
@@ -18,8 +19,8 @@ export default async function Investidor({ params, searchParams }: { params: Pro
   const id = Number((await params).id);
   const { ok, acesso } = await searchParams;
   if (!Number.isInteger(id) || id < 1) notFound();
-  const [i] = await sql<{ id: number; nome: string; email: string; celular: string; documento_cifrado: string | null; documento_final: string; pix_cifrado: string | null; ativo: boolean; ultimo_acesso: Date | null; relatorio_email: boolean }[]>`
-    SELECT id, nome, email, celular, documento_cifrado, documento_final, pix_cifrado, ativo, ultimo_acesso, relatorio_email FROM investidores WHERE id = ${id}`;
+  const [i] = await sql<{ id: number; nome: string; email: string; celular: string; documento_cifrado: string | null; documento_final: string; pix_cifrado: string | null; conta_cifrada: string | null; ativo: boolean; ultimo_acesso: Date | null; relatorio_email: boolean }[]>`
+    SELECT id, nome, email, celular, documento_cifrado, documento_final, pix_cifrado, conta_cifrada, ativo, ultimo_acesso, relatorio_email FROM investidores WHERE id = ${id}`;
   if (!i) notFound();
 
   const cotas = await sql<{ usina_id: number; usina: string; status: string; cota_ppm: number; valor_centavos: number }[]>`
@@ -78,6 +79,7 @@ export default async function Investidor({ params, searchParams }: { params: Pro
           <div><span>Celular</span><b>{i.celular ? celularFormatado(i.celular) : "—"}</b></div>
           <div><span>CPF/CNPJ</span><b className="num">{documento}</b></div>
           {admin && <div><span>Chave Pix</span><b>{decifrar(i.pix_cifrado) || "—"}</b></div>}
+          {admin && <div><span>Conta bancária</span><b>{contaTexto(abrirConta(i.conta_cifrada)) || "—"}</b></div>}
           <div><span>Último acesso ao app</span><b>{i.ultimo_acesso ? haQuanto(i.ultimo_acesso) : "nunca"}</b></div>
           <div><span>Relatório por e-mail</span><b>{i.relatorio_email ? "Recebe" : "Desligou no app"}</b></div>
         </div>
