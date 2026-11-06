@@ -116,8 +116,12 @@ function GraficoEixos({ rotulos, barras, linha, altura = 150, valorNaBarra, dest
   const n = Math.max(rotulos.length, 1), passo = pw / n, larg = Math.min(60, passo * 0.62);
   const eb = escala(Math.max(...barras.valores, 0));
   const nt = Math.round(eb.topo / eb.passo);
-  // O eixo da direita usa o mesmo número de linhas de grade do da esquerda.
-  const topoL = linha ? escala(Math.max(...linha.valores, 0), nt).passo * nt : 1;
+  // A linha fica na ponta das barras: a receita é proporcional à geração
+  // (geração x valor do kWh), então o eixo da direita é o da esquerda vezes essa
+  // proporção. Assim cada ponto cai no topo da sua barra e as linhas de grade valem
+  // para os dois lados.
+  const somaB = barras.valores.reduce((a, v) => a + v, 0), somaL = linha ? linha.valores.reduce((a, v) => a + v, 0) : 0;
+  const topoL = linha && somaB > 0 && somaL > 0 ? eb.topo * (somaL / somaB) : 1;
   const yb = (v: number) => T + ph - (v / eb.topo) * ph;
   const yl = (v: number) => T + ph - (v / topoL) * ph;
   const ticks = Array.from({ length: nt + 1 }, (_, i) => i);
@@ -148,7 +152,7 @@ function GraficoEixos({ rotulos, barras, linha, altura = 150, valorNaBarra, dest
         {valorNaBarra ? barras.valores.map((v, i) => (
           <Text key={`v${i}`} style={[lbl, { top: yb(v) - 11, left: E + passo * i - 4, width: passo + 8, textAlign: "center", fontFamily: "Helvetica-Bold", color: C.ink, fontSize: 7.5 }]}>{barras.fmt(v)}</Text>
         )) : null}
-        {rotulos.map((r, i) => (i % cada === 0 || i === n - 1 ? (
+        {rotulos.map((r, i) => (i % cada === 0 ? (
           <Text key={`r${i}`} style={[lbl, { top: T + ph + 5, left: E + passo * i - 8, width: passo + 16, textAlign: "center" }]}>{r}</Text>
         ) : null))}
       </View>
@@ -184,8 +188,9 @@ const dataExtenso = (d: Date) => {
 // Fecho do relatório: cidade e data de emissão, quem responde por ele e a empresa.
 function Assinatura({ e }: { e: Settings }) {
   return (
-    <View style={{ marginTop: 14 }} wrap={false}>
-      <Text style={{ textAlign: "right", marginBottom: 26 }}>{e.cidade ? `${e.cidade}, ` : ""}{dataExtenso(new Date())}.</Text>
+    <View style={{ marginTop: 18 }} wrap={false}>
+      {/* Espaço para a assinatura (à mão ou o carimbo da assinatura digital, como no modelo da HAV). */}
+      <Text style={{ textAlign: "right", marginBottom: 78 }}>{e.cidade ? `${e.cidade}, ` : ""}{dataExtenso(new Date())}.</Text>
       <View style={{ alignItems: "center" }}>
         {e.responsavel ? <View style={{ width: 200, borderTopWidth: 1, borderTopColor: C.ink, marginBottom: 3 }} /> : null}
         {e.responsavel ? <Text style={{ fontFamily: "Helvetica-Bold" }}>{e.responsavel}</Text> : null}
