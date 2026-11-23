@@ -4,7 +4,7 @@ import { sql } from "@/lib/db";
 import { Retorno } from "@/components/basicos";
 import { ERROS_USINA, FormUsina, type UsinaForm } from "../../FormUsina";
 import { excluirUsina } from "../../acoes";
-import { dadosSolis } from "@/lib/monitoramento";
+import { usinasDasPlataformas } from "@/lib/monitoramento";
 import { Confirmar } from "@/components/Confirmar";
 
 export default async function EditarUsina({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ erro?: string }> }) {
@@ -20,7 +20,7 @@ export default async function EditarUsina({ params, searchParams }: { params: Pr
   return (
     <>
       <Retorno erro={erro} mapaErro={ERROS_USINA} />
-      <FormUsina usina={usina} solis={await dadosSolis()} />
+      <FormUsina usina={usina} plataformas={await usinasDasPlataformas()} />
       <form action={excluirUsina} style={{ marginTop: 14 }}>
         <input type="hidden" name="id" value={usina.id} />
         <Confirmar className="btn btn-danger btn-sm" titulo={`Excluir a usina ${usina.nome}?`} texto="A usina sai do sistema de vez. Não dá para desfazer." confirmar="Excluir usina">Excluir usina</Confirmar>

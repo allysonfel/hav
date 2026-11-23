@@ -7,7 +7,6 @@ import { campoDecimal, periodoTexto, ppmDe } from "@/lib/format";
 import { Retorno } from "@/components/basicos";
 import { emailConfigurado } from "@/lib/email";
 import { iaConfigurada } from "@/lib/ia";
-import { solisConfigurada } from "@/lib/monitoramento/solis";
 import { demoAtiva } from "@/lib/demo";
 import { alternarDemo } from "./acoes";
 import { Confirmar } from "@/components/Confirmar";
@@ -137,7 +136,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
         </div>
         <div className="box-title">Integração com o monitoramento</div>
         <p className="muted sm" style={{ margin: "0 0 14px" }}>
-          Solis (SolisCloud): {solisConfigurada() ? <b>chave configurada no servidor.</b> : <b>chave ainda não configurada no servidor.</b>} Cada usina é ligada em Usinas, Editar, Integração com o monitoramento. A geração de cada dia é atualizada a cada 30 minutos de uso.
+          As chaves da Solis, da Solarman (Deye e Sofar) e da Solplanet ficam em <a href="/painel/integracoes">Integrações</a>, onde cada usina da plataforma é ligada a uma usina da HAV. A geração de cada dia é atualizada a cada 30 minutos de uso.
         </p>
         <div className="field"><label>Fuso horário</label><input value="América/Recife (UTC-3)" disabled readOnly /></div>
         <button className="btn btn-primary">Salvar alterações</button>

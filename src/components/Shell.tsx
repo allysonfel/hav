@@ -17,6 +17,7 @@ const NAV: Item[] = [
   { href: "/painel/comparativo", nome: "Comparativo", ic: "comparativo", grupo: "Análise" },
   { href: "/painel/relatorios", nome: "Relatórios", ic: "relatorios" },
   { href: "/painel/equipe", nome: "Equipe", ic: "equipe", so: "admin", grupo: "Gestão" },
+  { href: "/painel/integracoes", nome: "Integrações", ic: "integracoes", so: "admin" },
   { href: "/painel/configuracoes", nome: "Configurações", ic: "config", so: "admin" },
 ];
 
@@ -36,6 +37,7 @@ const TITULOS: [RegExp, string, string][] = [
   [/^\/painel\/comparativo/, "Comparativo", "Usinas lado a lado no mesmo período"],
   [/^\/painel\/relatorios/, "Relatórios", "Rateio por usina e por investidor"],
   [/^\/painel\/equipe/, "Equipe", "Usuários internos e papéis de acesso"],
+  [/^\/painel\/integracoes/, "Integrações", "Plataformas de monitoramento dos inversores"],
   [/^\/painel\/configuracoes/, "Configurações", "Preferências do sistema"],
   [/^\/painel\/conta/, "Minha conta", "Perfil e senha"],
 ];

@@ -33,13 +33,13 @@ export async function QuadroPeriodo({ usinaId, inicio, tarifa, cotaPpm, painel, 
       <div className="section-head" style={{ marginBottom: 6 }}>
         <div>
           <h3 style={{ fontSize: 15 }}>{titulo ?? "Período em andamento"}</h3>
-          <span className="hint">{periodoTexto(comp, inicio)} · dia {decorridos} de {p.dias}{sit.nome ? ` · dados do ${sit.nome}` : ""}</span>
+          <span className="hint">{periodoTexto(comp, inicio)} · dia {decorridos} de {p.dias}{sit.nome ? ` · dados: ${sit.nome}` : ""}</span>
         </div>
         {painel && sit.configurada && sit.monitoramento_id && (
           <form action={sincronizarAgora}><input type="hidden" name="usina" value={usinaId} /><button className="btn btn-ghost btn-sm">Atualizar agora</button></form>
         )}
       </div>
-      {painel && !sit.configurada && sit.monitoramento_id && <div className="aviso info">Usina vinculada à Solis, mas a chave de acesso ainda não foi configurada no servidor. Os dados começam a entrar quando ela for ligada.</div>}
+      {painel && !sit.configurada && sit.monitoramento_id && <div className="aviso info">Usina vinculada à {sit.nome || "plataforma de monitoramento"}, mas a chave de acesso dessa plataforma não está cadastrada em Integrações. Os dados começam a entrar quando ela for cadastrada.</div>}
       {painel && sit.monitoramento_erro && <div className="aviso erro">Última atualização falhou: {sit.monitoramento_erro}</div>}
       {dias.length > 0 ? (
         <>

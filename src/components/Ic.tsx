@@ -8,6 +8,7 @@ const IC = {
   relatorios: <><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5" /><path d="M9.5 13h5M9.5 16.5h5" /></>,
   equipe: <><circle cx="12" cy="8" r="3.3" /><path d="M5 20c0-3.6 3-6.2 7-6.2s7 2.6 7 6.2" /></>,
   config: <><circle cx="12" cy="12" r="3" /><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8" /></>,
+  integracoes: <><path d="M9 7V3M15 7V3" /><path d="M6 7h12v4a6 6 0 0 1-12 0z" /><path d="M12 17v4" /></>,
   comparativo: <><path d="M3 20h18" /><path d="M4 16l5-6 4 3 7-8" /></>,
   agente: <><path d="M4 5h16v11H8l-4 4V5z" /><path d="M8.5 9.5h7M8.5 12.5h4.5" /></>,
   pdf: <><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5" /><path d="M12 11v6M9.5 14.5 12 17l2.5-2.5" /></>,

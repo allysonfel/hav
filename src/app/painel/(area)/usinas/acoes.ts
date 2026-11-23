@@ -3,6 +3,7 @@
 // Usinas, cotistas, lançamento do mês e fechamento. Cadastro, cotas, fechar e
 // repasses são só do admin; operador lança a geração como rascunho.
 import { redirect } from "next/navigation";
+import { eTipo } from "@/lib/monitoramento/credenciais";
 import { after } from "next/server";
 import { cancelarPendentes, enfileirar, processarFila, reenviar } from "@/lib/envios";
 import { sql } from "@/lib/db";
@@ -51,9 +52,10 @@ export async function salvarUsina(fd: FormData) {
   const aferidaTxt = String(fd.get("aferida") ?? "").trim();
   const aferida = aferidaTxt ? tarifaDe(aferidaTxt) : null;
   if (aferidaTxt && !aferida) redirect(`${volta}?erro=aferida`);
-  const monTipo = fd.get("mon_tipo") === "solis" ? "solis" : "";
-  const monId = monTipo ? texto(fd, "mon_id", 40) : "";
-  if (monTipo && !/^\d{1,40}$/.test(monId)) redirect(`${volta}?erro=integracao`);
+  const [tipoTxt = "", ...resto] = String(fd.get("mon") ?? "").split(":");
+  const monTipo = eTipo(tipoTxt) ? tipoTxt : "";
+  const monId = monTipo ? resto.join(":").trim().slice(0, 80) : "";
+  if (monTipo && !/^[\w-]{1,80}$/.test(monId)) redirect(`${volta}?erro=integracao`);
   const [mesmoNome] = await sql`SELECT 1 FROM usinas WHERE nome = ${nome} AND id <> ${id}`;
   if (mesmoNome) redirect(`${volta}?erro=duplicada`);
 

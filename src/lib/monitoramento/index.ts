@@ -1,4 +1,5 @@
-// Geração por dia vinda do app de monitoramento dos inversores (hoje: Solis).
+// Geração por dia vinda das plataformas de monitoramento dos inversores
+// (Solis, Solarman para Deye/Sofar e Solplanet), configuradas no painel em Integrações.
 // Sincroniza os meses do período de apuração atual e do anterior, guarda em
 // geracao_diaria e serve para: geração do dia no painel e no app, o "até agora"
 // do período (com a receita pela tarifa), o lançamento do mês já preenchido e
@@ -6,11 +7,39 @@
 import "server-only";
 import { sql } from "../db";
 import { periodo, somarMeses, TZ } from "../format";
-import { ErroSolis, geracaoDoMesSolis, solisConfigurada, usinasSolis } from "./solis";
+import { geracaoDoMesSolis, usinasSolis } from "./solis";
+import { geracaoDoMesSolarman, usinasSolarman } from "./solarman";
+import { geracaoDoMesSolplanet, usinasSolplanet } from "./solplanet";
+import { ErroIntegracao, PLATAFORMAS, TIPOS_LISTA, credenciais, eTipo, type Credenciais, type Tipo } from "./credenciais";
 
-export const TIPOS = { solis: "Solis (SolisCloud)" } as const;
-export type Tipo = keyof typeof TIPOS;
-export const integracaoConfigurada = (t: string) => t === "solis" && solisConfigurada();
+export type { Tipo };
+export const TIPOS = Object.fromEntries(TIPOS_LISTA.map((t) => [t, PLATAFORMAS[t].nome])) as Record<Tipo, string>;
+export { configurada as integracaoConfigurada } from "./credenciais";
+
+type Usina = { id: string; nome: string };
+const CLIENTES: Record<Tipo, { usinas: (c: Credenciais) => Promise<Usina[]>; mes: (c: Credenciais, id: string, mes: string) => Promise<{ dia: string; wh: number }[]> }> = {
+  solis: { usinas: usinasSolis, mes: geracaoDoMesSolis },
+  solarman: { usinas: usinasSolarman, mes: geracaoDoMesSolarman },
+  solplanet: { usinas: usinasSolplanet, mes: geracaoDoMesSolplanet },
+};
+
+// Usinas da conta de uma plataforma (para ligar às usinas da HAV). Erro vira mensagem.
+export async function usinasDaPlataforma(tipo: Tipo, c?: Credenciais | null): Promise<{ configurada: boolean; usinas: Usina[]; erro?: string }> {
+  const cred = c ?? (await credenciais(tipo));
+  if (!cred) return { configurada: false, usinas: [] };
+  try {
+    return { configurada: true, usinas: await CLIENTES[tipo].usinas(cred) };
+  } catch (e) {
+    if (!(e instanceof ErroIntegracao)) console.error("[monitoramento]", tipo, e instanceof Error ? e.message : e);
+    return { configurada: true, usinas: [], erro: e instanceof ErroIntegracao ? e.message : "falha na consulta" };
+  }
+}
+
+// Usinas de todas as plataformas configuradas (para o cadastro da usina).
+export async function usinasDasPlataformas(): Promise<Record<Tipo, { configurada: boolean; usinas: Usina[]; erro?: string }>> {
+  const r = await Promise.all(TIPOS_LISTA.map((t) => usinasDaPlataforma(t)));
+  return Object.fromEntries(TIPOS_LISTA.map((t, i) => [t, r[i]])) as Record<Tipo, { configurada: boolean; usinas: Usina[]; erro?: string }>;
+}
 
 // Dados de mais de 30 min são atualizados quando alguém abre a tela.
 const VALIDADE_MS = 30 * 60_000;
@@ -30,31 +59,33 @@ function mesesDoPeriodo(comp: string, inicio: number): string[] {
   return [...new Set([p.ini.slice(0, 7), p.fim.slice(0, 7)])];
 }
 
-// Puxa da Solis e grava. Erro fica anotado na usina (aparece no painel), sem derrubar a tela.
+// Puxa da plataforma da usina e grava. Erro fica anotado na usina (aparece no painel), sem derrubar a tela.
 export async function sincronizarUsina(usinaId: number, inicio: number, forcar = false): Promise<{ ok: boolean; erro?: string }> {
   const [u] = await sql<{ monitoramento_tipo: string; monitoramento_id: string; monitoramento_sinc: Date | null }[]>`
     SELECT monitoramento_tipo, monitoramento_id, monitoramento_sinc FROM usinas WHERE id = ${usinaId}`;
-  if (!u || !u.monitoramento_id || !integracaoConfigurada(u.monitoramento_tipo)) return { ok: false, erro: "sem integração" };
+  const tipo = u?.monitoramento_tipo;
+  const cred = u && u.monitoramento_id && eTipo(tipo) ? await credenciais(tipo) : null;
+  if (!u || !eTipo(tipo) || !cred) return { ok: false, erro: "sem integração" };
   if (!forcar && u.monitoramento_sinc && Date.now() - new Date(u.monitoramento_sinc).getTime() < VALIDADE_MS) return { ok: true };
-  // Marca antes de buscar: duas telas abertas juntas não chamam a Solis duas vezes.
+  // Marca antes de buscar: duas telas abertas juntas não chamam a plataforma duas vezes.
   await sql`UPDATE usinas SET monitoramento_sinc = now() WHERE id = ${usinaId}`;
   const atual = competenciaAtual(inicio);
   const meses = [...new Set([...mesesDoPeriodo(somarMeses(atual, -1), inicio), ...mesesDoPeriodo(atual, inicio)])];
   const hoje = hojeIso();
   try {
     for (const mes of meses) {
-      const dias = (await geracaoDoMesSolis(u.monitoramento_id, mes)).filter((d) => d.dia <= hoje);
+      const dias = (await CLIENTES[tipo].mes(cred, u.monitoramento_id, mes)).filter((d) => d.dia <= hoje);
       for (const d of dias) {
         await sql`
-          INSERT INTO geracao_diaria (usina_id, dia, geracao_wh, fonte) VALUES (${usinaId}, ${d.dia}, ${d.wh}, 'solis')
-          ON CONFLICT (usina_id, dia) DO UPDATE SET geracao_wh = excluded.geracao_wh, fonte = 'solis', atualizado_em = now()`;
+          INSERT INTO geracao_diaria (usina_id, dia, geracao_wh, fonte) VALUES (${usinaId}, ${d.dia}, ${d.wh}, ${tipo})
+          ON CONFLICT (usina_id, dia) DO UPDATE SET geracao_wh = excluded.geracao_wh, fonte = excluded.fonte, atualizado_em = now()`;
       }
     }
     await sql`UPDATE usinas SET monitoramento_erro = '' WHERE id = ${usinaId}`;
     return { ok: true };
   } catch (e) {
-    const erro = e instanceof ErroSolis ? e.message : "Falha ao ler os dados da Solis.";
-    if (!(e instanceof ErroSolis)) console.error("[monitoramento]", e instanceof Error ? e.message : e);
+    const erro = e instanceof ErroIntegracao ? e.message : `Falha ao ler os dados da ${PLATAFORMAS[tipo].nome}.`;
+    if (!(e instanceof ErroIntegracao)) console.error("[monitoramento]", e instanceof Error ? e.message : e);
     await sql`UPDATE usinas SET monitoramento_erro = ${erro.slice(0, 200)} WHERE id = ${usinaId}`;
     return { ok: false, erro };
   }
@@ -85,7 +116,7 @@ export async function situacaoIntegracao(usinaId: number) {
   const [u] = await sql<{ monitoramento_tipo: string; monitoramento_id: string; monitoramento_sinc: Date | null; monitoramento_erro: string }[]>`
     SELECT monitoramento_tipo, monitoramento_id, monitoramento_sinc, monitoramento_erro FROM usinas WHERE id = ${usinaId}`;
   if (!u) return null;
-  return { ...u, configurada: integracaoConfigurada(u.monitoramento_tipo), nome: TIPOS[u.monitoramento_tipo as Tipo] ?? "" };
+  return { ...u, configurada: eTipo(u.monitoramento_tipo) && !!(await credenciais(u.monitoramento_tipo)), nome: TIPOS[u.monitoramento_tipo as Tipo] ?? "" };
 }
 
 // Todos os dias do período, com null nos que ainda não têm dado (para o gráfico).
@@ -96,14 +127,4 @@ export function grade(p: { ini: string; dias: number }, dias: Dia[]): { dia: str
     const dia = new Date(ini + i * 86_400_000).toISOString().slice(0, 10);
     return { dia, geracao_wh: mapa.get(dia) ?? null };
   });
-}
-
-// Usinas da conta Solis para escolher no cadastro (sem travar a tela se a Solis falhar).
-export async function dadosSolis(): Promise<{ configurada: boolean; usinas: { id: string; nome: string }[]; erro?: string }> {
-  if (!solisConfigurada()) return { configurada: false, usinas: [] };
-  try {
-    return { configurada: true, usinas: await usinasSolis() };
-  } catch (e) {
-    return { configurada: true, usinas: [], erro: e instanceof ErroSolis ? e.message : "falha na consulta" };
-  }
 }

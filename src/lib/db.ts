@@ -265,6 +265,25 @@ CREATE TABLE IF NOT EXISTS geracao_diaria (
   atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (usina_id, dia)
 );
+
+-- Painel de integrações: credenciais de cada plataforma de monitoramento
+-- (Solis, Solarman, Solplanet), em JSON criptografado com a DADOS_CHAVE, como
+-- o CPF e o Pix. O teste de conexão fica anotado para o painel mostrar.
+CREATE TABLE IF NOT EXISTS integracoes (
+  tipo TEXT PRIMARY KEY CHECK (tipo IN ('solis', 'solarman', 'solplanet')),
+  credenciais_cifradas TEXT NOT NULL,
+  testado_em TIMESTAMPTZ,
+  teste_ok BOOLEAN,
+  teste_msg TEXT NOT NULL DEFAULT '',
+  atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Mais de uma plataforma: as regras antigas (só 'solis', ID de 40) são trocadas.
+ALTER TABLE usinas DROP CONSTRAINT IF EXISTS usinas_monitoramento_tipo_check;
+ALTER TABLE usinas ADD CONSTRAINT usinas_monitoramento_tipo_check CHECK (monitoramento_tipo IN ('', 'solis', 'solarman', 'solplanet'));
+ALTER TABLE usinas DROP CONSTRAINT IF EXISTS usinas_monitoramento_id_check;
+ALTER TABLE usinas ADD CONSTRAINT usinas_monitoramento_id_check CHECK (length(monitoramento_id) <= 80);
+ALTER TABLE geracao_diaria DROP CONSTRAINT IF EXISTS geracao_diaria_fonte_check;
+ALTER TABLE geracao_diaria ADD CONSTRAINT geracao_diaria_fonte_check CHECK (fonte IN ('solis', 'solarman', 'solplanet', 'demo'));
 `;
 
 let pronto: Promise<void> | null = null;

@@ -21,7 +21,7 @@ const ERROS: Record<string, string> = {
   investidor: "Escolha um investidor ativo.",
   cota: "Confira o percentual da cota.",
   excede: "Com essa cota, a usina passaria de 100%. Ajuste as outras primeiro.",
-  sinc: "Não deu para atualizar com a Solis agora. O motivo aparece no quadro do período.",
+  sinc: "Não deu para atualizar com a plataforma de monitoramento agora. O motivo aparece no quadro do período.",
 };
 
 export default async function Usina({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string; p?: string }> }) {
@@ -65,7 +65,7 @@ export default async function Usina({ params, searchParams }: { params: Promise<
 
   return (
     <>
-      <Retorno ok={sp.ok} erro={sp.erro} mapaErro={ERROS} mapaOk={{ sinc: "Geração atualizada com a Solis.", usina: "Usina salva.", cota: "Cota salva.", cota_removida: "Cota removida. Meses já fechados não mudam." }} />
+      <Retorno ok={sp.ok} erro={sp.erro} mapaErro={ERROS} mapaOk={{ sinc: "Geração atualizada com a plataforma de monitoramento.", usina: "Usina salva.", cota: "Cota salva.", cota_removida: "Cota removida. Meses já fechados não mudam." }} />
       <Link className="btn btn-ghost" style={{ marginBottom: 14 }} href="/painel/usinas">← Voltar para usinas</Link>
       {u.status !== "captacao" && <QuadroPeriodo usinaId={u.id} inicio={cfg.inicioPeriodo} tarifa={u.tarifa_kwh} painel titulo={`${u.nome}: período em andamento`} />}
 
