@@ -79,10 +79,16 @@ export async function usinasSolarman(c: Credenciais): Promise<{ id: string; nome
 export async function geracaoDoMesSolarman(c: Credenciais, id: string, mes: string): Promise<{ dia: string; wh: number }[]> {
   const t = await token(c);
   const j = await post(c, "/station/v1.0/history?language=en", { stationId: Number(id), startTime: `${mes}-01`, endTime: fimDoMes(mes), timeType: 2 }, t);
-  const recs = ((j.stationDataItems as { year?: unknown; month?: unknown; day?: unknown; generationValue?: unknown }[] | undefined) ?? []);
+  // A rota do histórico da usina não tem documentação pública: aceita o dia em
+  // year/month/day, em dateTime (segundos) ou em data "AAAA-MM-DD".
+  const recs = ((j.stationDataItems ?? j.dataList) as { year?: unknown; month?: unknown; day?: unknown; dateTime?: unknown; date?: unknown; generationValue?: unknown }[] | undefined) ?? [];
   const saida: { dia: string; wh: number }[] = [];
   for (const r of recs) {
-    const dia = `${r.year}-${String(r.month).padStart(2, "0")}-${String(r.day).padStart(2, "0")}`;
+    const dia = r.year && r.month && r.day
+      ? `${r.year}-${String(r.month).padStart(2, "0")}-${String(r.day).padStart(2, "0")}`
+      : Number(r.dateTime) > 0
+        ? new Date(Number(r.dateTime) * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })
+        : String(r.date ?? "").slice(0, 10);
     const wh = paraWh(r.generationValue, "kWh");
     if (/^\d{4}-\d{2}-\d{2}$/.test(dia) && dia.startsWith(mes) && wh !== null) saida.push({ dia, wh });
   }
