@@ -6,6 +6,7 @@ import { brl0, campoDecimal, kwp, pct } from "@/lib/format";
 import { PillUsina, Progresso, Retorno } from "@/components/basicos";
 import { confirmarInteresse, mudarInteresse, novoInteressado } from "./acoes";
 
+import { ManterCampos } from "@/components/ManterCampos";
 type Interesse = { id: number; usina_id: number; investidor_id: number | null; nome: string; telefone: string; valor_centavos: number; origem: string; status: string; cotista: string | null };
 
 const ERROS: Record<string, string> = {
@@ -56,6 +57,7 @@ export default async function Captacao({ searchParams }: { searchParams: Promise
 
       {confirmando && (
         <form action={confirmarInteresse} className="card card-p" style={{ marginBottom: 18 }} id="confirmar">
+<ManterCampos chave="confirmar-interesse" />
           <input type="hidden" name="id" value={confirmando.id} />
           <div className="section-head"><h3>Confirmar {confirmando.nome} como cotista</h3><Link className="link" href="/painel/captacao">Cancelar</Link></div>
           <div className="form-grid">
@@ -126,6 +128,7 @@ export default async function Captacao({ searchParams }: { searchParams: Promise
                 </table>
               </div>
               <form action={novoInteressado} style={{ padding: 18, borderTop: "1px solid var(--border)" }}>
+<ManterCampos chave={`interessado-${u.id}`} />
                 <input type="hidden" name="usina" value={u.id} />
                 <div className="box-title" style={{ marginTop: 0 }}>Adicionar interessado</div>
                 <div className="form-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", alignItems: "end" }}>

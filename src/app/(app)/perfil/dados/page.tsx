@@ -4,6 +4,7 @@ import { sql } from "@/lib/db";
 import { celularFormatado } from "@/lib/cpf";
 import { salvarCelular } from "../../acoes";
 
+import { ManterCampos } from "@/components/ManterCampos";
 export default async function Dados({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
   const i = await requireInvestidor();
   const sp = await searchParams;
@@ -14,6 +15,7 @@ export default async function Dados({ searchParams }: { searchParams: Promise<{ 
       {sp.ok && <div className="aviso ok">Celular salvo.</div>}
       {sp.erro && <div className="aviso erro">Confira o celular, com DDD.</div>}
       <form action={salvarCelular} className="card card-p" style={{ marginBottom: 14 }}>
+<ManterCampos chave="dados" />
         <div className="field"><label>Nome</label><input value={i.nome} disabled readOnly /></div>
         <div className="field"><label>E-mail</label><input value={i.email} disabled readOnly /></div>
         <div className="field"><label>CPF/CNPJ</label><input value={r.documento_final ? `••••••${r.documento_final}` : "Não informado"} disabled readOnly /></div>

@@ -5,6 +5,7 @@ import { decifrar } from "@/lib/cifra";
 import { abrirConta } from "@/lib/contaBancaria";
 import { salvarPix } from "../../acoes";
 
+import { ManterCampos } from "@/components/ManterCampos";
 const ERROS: Record<string, string> = { pix: "Informe a chave Pix ou a conta bancária.", conta: "Conta incompleta: informe banco, agência e conta (só números e traço), ou deixe os três em branco.", senha: "Senha incorreta.", limite: "Muitas tentativas. Aguarde 15 minutos." };
 
 export default async function Pix({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
@@ -18,6 +19,7 @@ export default async function Pix({ searchParams }: { searchParams: Promise<{ ok
       {sp.ok && <div className="aviso ok">Dados para repasse salvos.</div>}
       {sp.erro && <div className="aviso erro">{ERROS[sp.erro] ?? "Confira os dados."}</div>}
       <form action={salvarPix} className="card card-p">
+<ManterCampos chave="pix" />
         <div className="field"><label htmlFor="pix">Chave Pix</label><input id="pix" name="pix" defaultValue={decifrar(r.pix_cifrado)} maxLength={140} /><small>Guardada com criptografia.</small></div>
         <div className="box-title">Conta bancária</div>
         <div className="field"><label htmlFor="banco">Banco</label><input id="banco" name="banco" defaultValue={c?.banco} maxLength={60} /></div>

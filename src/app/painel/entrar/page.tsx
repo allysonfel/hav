@@ -6,6 +6,7 @@ import { audit } from "@/lib/audit";
 import { clientIp } from "@/lib/request";
 import { isBlocked, registerFailure, clearFailures, LIMITE_EMAIL, LIMITE_IP } from "@/lib/limits";
 
+import { ManterCampos } from "@/components/ManterCampos";
 async function login(fd: FormData) {
   "use server";
   await ensureSchema();
@@ -52,6 +53,7 @@ export default async function Entrar({ searchParams }: { searchParams: Promise<{
       </div>
       <div className="login-lado">
         <form className="login-card" action={login}>
+<ManterCampos chave="painel-entrar" />
           <h1>Entrar no painel</h1>
           <p className="sub">Use o e-mail cadastrado pela administração da HAV.</p>
           {erro && <div className="aviso erro">{erro === "bloqueado" ? "Muitas tentativas. Aguarde 15 minutos e tente de novo." : "E-mail ou senha incorretos."}</div>}

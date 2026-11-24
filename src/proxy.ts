@@ -24,11 +24,17 @@ const LIMITES: [regra: RegExp, max: number, metodo?: string][] = [
 
 const PUBLICAS_APP = ["/entrar", "/criar-conta", "/recuperar", "/acesso", "/privacidade", "/manifest.webmanifest"];
 
+// Tela (e não texto solto) para quem passa do limite: explica, diz quanto
+// esperar e tem botão para tentar de novo. HTML fixo, sem script.
+function telaLimite(esperarSeg: number): string {
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aguarde um pouco · HAV Energia</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f6f9;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#13294b}div{background:#fff;border:1px solid #dde3ec;border-radius:16px;padding:28px 24px;max-width:380px;margin:16px;text-align:center}h1{font-size:19px;margin:0 0 8px}p{color:#5b6b7d;font-size:15px;line-height:1.5;margin:0 0 20px}a{display:inline-block;background:#13294b;color:#fff;text-decoration:none;border-radius:10px;padding:11px 20px;font-weight:600}@media (prefers-color-scheme:dark){body{background:#0d1626;color:#e8edf5}div{background:#152238;border-color:#24344f}p{color:#a9b6c8}a{background:#f0a53a;color:#13294b}}</style></head><body><div><h1>Muitos acessos em pouco tempo</h1><p>Por segurança, o sistema pausou por alguns segundos. Aguarde cerca de ${esperarSeg} segundo${esperarSeg === 1 ? "" : "s"} e tente de novo.</p><a href="">Tentar de novo</a></div></body></html>`;
+}
+
 function muitas(esperarSeg: number, api: boolean) {
   const headers = { "Retry-After": String(esperarSeg) };
   return api
     ? Response.json({ erro: "Muitas requisições. Aguarde um pouco e tente de novo." }, { status: 429, headers })
-    : new NextResponse("Muitas requisições. Aguarde um pouco e tente de novo.", { status: 429, headers });
+    : new NextResponse(telaLimite(esperarSeg), { status: 429, headers: { ...headers, "Content-Type": "text/html; charset=utf-8" } });
 }
 
 // style-src aceita 'unsafe-inline' porque as telas usam atributos style.

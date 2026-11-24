@@ -11,6 +11,7 @@ import { EMAIL } from "@/lib/settings";
 import { Retorno } from "@/components/basicos";
 import { Confirmar } from "@/components/Confirmar";
 
+import { ManterCampos } from "@/components/ManterCampos";
 type Pessoa = { id: number; nome: string; email: string; perfil: Perfil; ativo: boolean; ultimo_acesso: Date | null };
 
 // Senha provisória legível (sem letras que confundem), mostrada uma vez para o admin repassar.
@@ -99,6 +100,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
       </div>
       {sp.convidar && (
         <form action={convidar} className="card card-p" style={{ marginBottom: 16, maxWidth: 760 }}>
+<ManterCampos chave="convidar" />
           <div className="form-grid">
             <div className="field"><label htmlFor="nome">Nome</label><input id="nome" name="nome" required maxLength={80} /></div>
             <div className="field"><label htmlFor="email">E-mail (login)</label><input id="email" name="email" type="email" required maxLength={160} /></div>

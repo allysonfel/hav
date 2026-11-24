@@ -1,10 +1,12 @@
 import { salvarInvestidor } from "./acoes";
 
+import { ManterCampos } from "@/components/ManterCampos";
 type Dados = { id: number; nome: string; email: string; celular: string; documento: string; pix: string; banco: string; agencia: string; conta: string };
 
 export function FormInvestidor({ inv }: { inv?: Dados }) {
   return (
     <form action={salvarInvestidor} className="card card-p" style={{ maxWidth: 760 }}>
+<ManterCampos chave="investidor" />
       {inv && <input type="hidden" name="id" value={inv.id} />}
       <div className="form-grid">
         <div className="field inteiro"><label htmlFor="nome">Nome ou razão social</label><input id="nome" name="nome" defaultValue={inv?.nome} required maxLength={120} /></div>

@@ -5,6 +5,7 @@ import { hashPassword, verifyPassword, SENHA_MINIMA } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { Retorno } from "@/components/basicos";
 
+import { ManterCampos } from "@/components/ManterCampos";
 async function salvarPerfil(fd: FormData) {
   "use server";
   const u = await requireUser();
@@ -42,6 +43,7 @@ export default async function Conta({ searchParams }: { searchParams: Promise<{ 
         mapaOk={{ perfil: "Perfil salvo.", senha: "Senha trocada. As outras sessões foram encerradas." }}
         mapaErro={{ nome: "Informe o nome.", atual: "Senha atual incorreta.", curta: `A nova senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.` }} />
       <form action={salvarPerfil} className="card card-p" style={{ marginBottom: 16 }}>
+<ManterCampos chave="conta-perfil" />
         <h4 style={{ margin: "0 0 14px" }}>Perfil</h4>
         <div className="form-grid">
           <div className="field"><label htmlFor="nome">Nome</label><input id="nome" name="nome" defaultValue={u.nome} required maxLength={80} /></div>

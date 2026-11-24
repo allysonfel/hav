@@ -1,6 +1,7 @@
 import { salvarUsina } from "./acoes";
 import { campoDecimal } from "@/lib/format";
 
+import { ManterCampos } from "@/components/ManterCampos";
 export type UsinaForm = {
   id: number;
   nome: string;
@@ -27,6 +28,7 @@ const NOMES: Record<string, string> = { solis: "Solis", solarman: "Solarman (Dey
 export function FormUsina({ usina, status, plataformas }: { usina?: UsinaForm; status?: string; plataformas?: Plataformas }) {
   return (
     <form action={salvarUsina} className="card card-p" style={{ maxWidth: 760 }}>
+<ManterCampos chave="usina" />
       {usina && <input type="hidden" name="id" value={usina.id} />}
       <div className="box-title">Usina</div>
       <div className="form-grid">

@@ -4,6 +4,7 @@ import { sql } from "@/lib/db";
 import { brl0, dataBr, kwh, mesAno } from "@/lib/format";
 import { listarInvestidores } from "@/lib/investidores";
 
+import { EnviarAoTrocar } from "@/components/ManterCampos";
 // Todo mês fechado vira relatório: não há o que gerar à parte.
 export default async function Relatorios({ searchParams }: { searchParams: Promise<{ por?: string; usina?: string; repasse?: string }> }) {
   const u = await requireUser();
@@ -43,7 +44,8 @@ export default async function Relatorios({ searchParams }: { searchParams: Promi
             <option value="">Todos os repasses</option>
             <option value="pendente">Só com repasse pendente</option>
           </select>
-          <button className="btn btn-ghost">Filtrar</button>
+          <EnviarAoTrocar />
+          <noscript><button className="btn btn-ghost">Filtrar</button></noscript>
         </form>
       )}
 

@@ -8,6 +8,7 @@ import { Retorno } from "@/components/basicos";
 import { lancarGeracao } from "../../acoes";
 import { diasDoPeriodo } from "@/lib/monitoramento";
 
+import { ManterCampos } from "@/components/ManterCampos";
 const ERROS: Record<string, string> = {
   mes: "Escolha um mês válido (não pode ser no futuro).",
   geracao: "Informe a geração do mês em kWh.",
@@ -60,6 +61,7 @@ export default async function Lancar({ params, searchParams }: { params: Promise
           <div className="aviso info">{mesAno(comp)} já está fechado. Escolha outro mês.</div>
         ) : (
           <form action={lancarGeracao} key={comp}>
+<ManterCampos chave={`lancar-${id}-${comp}`} />
             <input type="hidden" name="usina" value={id} />
             <input type="hidden" name="comp" value={comp} />
             <p className="muted sm" style={{ margin: "0 0 10px" }}>Período de {mesAno(comp)}: <b>{periodoTexto(comp, s.inicioPeriodo)}</b>.</p>

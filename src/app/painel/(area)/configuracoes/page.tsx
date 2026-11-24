@@ -11,6 +11,7 @@ import { demoAtiva } from "@/lib/demo";
 import { alternarDemo } from "./acoes";
 import { Confirmar } from "@/components/Confirmar";
 
+import { ManterCampos } from "@/components/ManterCampos";
 async function salvar(fd: FormData) {
   "use server";
   const u = await requireUser(["admin"]);
@@ -63,6 +64,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
     <>
       <Retorno ok={sp.ok} erro={sp.erro} mapaOk={{ "1": "Configurações salvas." }} mapaErro={{ "1": "Confira os dados (CNPJ, WhatsApp, e-mail, prazo ou taxas do comparativo inválidos)." }} />
       <form action={salvar} className="card card-p" style={{ maxWidth: 640 }}>
+<ManterCampos chave="configuracoes" />
         <h4 style={{ margin: "0 0 14px" }}>Sistema</h4>
         <div className="field"><label htmlFor="empresa">Nome da empresa</label><input id="empresa" name="empresa" defaultValue={s.empresa} required maxLength={40} /></div>
         <div className="field"><label htmlFor="razao_social">Razão social</label><input id="razao_social" name="razao_social" defaultValue={s.razaoSocial} maxLength={100} /></div>
