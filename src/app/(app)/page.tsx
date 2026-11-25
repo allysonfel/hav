@@ -38,6 +38,8 @@ export default async function Inicio() {
         <h2>{atual ? `Seu resumo de ${mesLongo(atual.comp).split(" ")[0]}` : "Bem-vindo à HAV Energia"}</h2>
       </div>
 
+      {/* No computador: receita do mês e retorno lado a lado (no celular a caixa não existe: display contents). */}
+      <div className="inv-dois">
       {atual ? (
         <div className="hero-card">
           <div className="lbl">SUA RECEITA DO MÊS</div>
@@ -75,6 +77,7 @@ export default async function Inicio() {
           <p className="retorno-frase"><b>{pctTexto(rend.recebido + rend.aReceber, rend.investido)}</b> do valor que você investiu já voltou em receita.</p>
         </div>
       )}
+      </div>
 
       {hist.real.length > 1 && (
         <div style={{ marginBottom: 14 }}>
@@ -83,12 +86,15 @@ export default async function Inicio() {
         </div>
       )}
 
+      <div className="inv-quadros">
       {integradas.map((u) => (
         <QuadroPeriodo key={u.usina_id} usinaId={u.usina_id} inicio={cfg.inicioPeriodo} tarifa={u.tarifa_kwh} cotaPpm={u.cota_ppm} titulo={`${u.nome}: agora`} />
       ))}
+      </div>
 
       <div className="section-head"><h3>Minhas usinas</h3>{ativas > 0 && <span className="hint">{ativas} {ativas === 1 ? "cota ativa" : "cotas ativas"}</span>}</div>
       {usinas.length === 0 && <div className="card card-p vazio">Nenhuma cota registrada ainda.</div>}
+      <div className="inv-cards">
       {usinas.map((u) => {
         const sit = situacaoEsperado(relacaoEsperado(u.geracao_wh, u.geracao_esperada_wh ? (u.geracao_esperada_wh * u.cota_ppm) / 1_000_000 : null));
         return (
@@ -107,6 +113,7 @@ export default async function Inicio() {
           </Link>
         );
       })}
+      </div>
     </>
   );
 }

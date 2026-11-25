@@ -20,6 +20,7 @@ export default async function MinhasUsinas() {
     <>
       <div className="hello"><h2>Minhas usinas</h2></div>
       {usinas.length === 0 && <div className="card card-p vazio">Nenhuma cota registrada ainda.</div>}
+      <div className="inv-cards">
       {usinas.map((u) => {
         const r = rend.usinas.find((x) => x.usina_id === u.usina_id);
         const sit = situacaoEsperado(relacaoEsperado(u.geracao_wh, u.geracao_esperada_wh ? (u.geracao_esperada_wh * u.cota_ppm) / 1_000_000 : null));
@@ -47,6 +48,7 @@ export default async function MinhasUsinas() {
         </div>
         );
       })}
+      </div>
       {comp && comp.series.length > 1 && (
         <div style={{ marginTop: 6 }}>
           <LinhasComparativo

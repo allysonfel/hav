@@ -43,7 +43,7 @@ export default async function Relatorios({ searchParams }: { searchParams: Promi
                   return <span className="warn-txt">{atrasado(p, "pendente") ? `Repasse aguardando (previsto era ${dataBr(p!)})` : `Repasse previsto até ${p ? dataBr(p) : "—"}`}</span>;
                 })()}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div className="li-acoes" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <a className="btn btn-gold btn-sm" href={`/relatorios/${r.fechamento_id}/pdf`}>PDF</a>
                 <a className="btn btn-ghost btn-sm" href={`/relatorios/${r.fechamento_id}/exportar`} title="Planilha (CSV)">Planilha</a>
               </div>

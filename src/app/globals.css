@@ -649,3 +649,55 @@ a.box:active { background: rgba(255,255,255,.14); }
 .barras-dias { padding-top: 0; }
 .barras-dias .barras-col.sel .barras-mes { color: var(--ink); font-weight: 800; }
 @media (prefers-reduced-motion: reduce) { .dias-balao { transition: none; } }
+
+/* =====================================================================
+   App do investidor no computador (a partir de 1024 px). Abaixo disso o
+   app é exatamente o de celular: o menu lateral fica escondido e as caixas
+   de arrumação (.inv-dois, .inv-cards) não existem (display: contents).
+   ===================================================================== */
+.inv-side { display: none; }
+.inv-dois, .inv-cards, .inv-quadros { display: contents; }
+@media (min-width: 1024px) {
+  .app { max-width: none; margin: 0; background: linear-gradient(to right, var(--side) 248px, var(--bg) 248px); display: grid; grid-template-columns: 248px minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; }
+  .inv-side { display: flex; flex-direction: column; grid-column: 1; grid-row: 1 / span 2; position: sticky; top: 0; height: 100dvh; background: var(--side); color: #fff; padding: 20px 14px; }
+  .inv-side-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 22px; text-decoration: none; color: #fff; }
+  .inv-side-brand img { width: 34px; height: 34px; border-radius: 9px; background: #fff; padding: 2px; object-fit: contain; }
+  .inv-side-brand span { font-family: var(--titulo); font-size: 17px; font-weight: 600; }
+  .inv-side-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .inv-side-nav a { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; color: #c3d0de; font-size: 14px; font-weight: 500; text-decoration: none; transition: background .16s ease, color .16s ease, transform .1s ease; }
+  .inv-side-nav a .icon { width: 19px; height: 19px; opacity: .85; }
+  .inv-side-nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .inv-side-nav a:active { transform: scale(.98); }
+  .inv-side-nav a.active { background: rgba(255,255,255,.13); color: #fff; font-weight: 700; }
+  .inv-side-cont { margin-left: auto; background: var(--orange); color: #fff; font-size: 11px; font-weight: 700; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; display: inline-flex; align-items: center; justify-content: center; }
+  .inv-side-user { display: flex; align-items: center; gap: 10px; padding: 12px 8px 4px; border-top: 1px solid rgba(255,255,255,.1); text-decoration: none; color: #fff; }
+  .inv-side-av { width: 36px; height: 36px; border-radius: 99px; background: var(--gold); color: #331e00; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .inv-side-meta { min-width: 0; }
+  .inv-side-meta b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .inv-side-meta small { display: block; font-size: 11.5px; color: #9fb0c2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* topo: a marca já está no menu; ficam o tema e o sino à direita */
+  .inv-top { grid-column: 2; grid-row: 1; justify-content: flex-end; padding: 14px 32px; }
+  .inv-top .brand { display: none; }
+  .inv-scroll { grid-column: 2; grid-row: 2; width: 100%; max-width: 1180px; padding: 28px 40px 56px; }
+  .inv-scroll.estreita { max-width: 820px; }
+  .bottom-nav { display: none; }
+  .hello { margin-bottom: 20px; }
+  .hello .hi { font-size: 13.5px; }
+  .hello h2 { font-size: 24px; }
+  /* Início: receita do mês e retorno lado a lado; usinas em cartões */
+  .inv-dois { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .inv-dois > * { margin-bottom: 0 !important; }
+  .inv-dois .hero-card { display: flex; flex-direction: column; justify-content: center; }
+  .inv-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .inv-cards > * { margin-bottom: 0; }
+  /* quadros do período em andamento: dois por linha quando cabem */
+  .inv-quadros { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .inv-quadros > * { margin: 0 !important; }
+  a.mini-card:hover { border-color: var(--accent-ink); }
+  /* Relatórios: PDF e Planilha lado a lado na linha */
+  .li-acoes { flex-direction: row !important; }
+  .list-item { padding: 14px 20px; }
+  /* assistente no canto da tela, não da coluna de celular */
+  .ai-fab-app { right: 32px; bottom: 32px; width: 50px; height: 50px; }
+  .ai-panel-app { right: 32px; bottom: 94px; width: 360px; max-height: min(560px, calc(100dvh - 140px)); }
+}

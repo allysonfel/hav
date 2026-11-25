@@ -8,7 +8,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const i = await requireInvestidor();
   const s = await getSettings();
   return (
-    <AppShell naoLidos={await avisosNaoLidos(i.id)} oportunidades={s.oportunidades}>
+    <AppShell naoLidos={await avisosNaoLidos(i.id)} oportunidades={s.oportunidades} nome={i.nome} email={i.email}>
       {children}
       {s.agente && <Agente onde="app" />}
     </AppShell>
