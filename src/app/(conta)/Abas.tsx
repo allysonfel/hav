@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const ABAS = [["/entrar", "Entrar"], ["/criar-conta", "Criar conta"], ["/recuperar", "Esqueci a senha"]];
+const ABAS = [["/entrar", "Entrar"], ["/criar-conta", "Primeiro acesso"], ["/recuperar", "Esqueci a senha"]];
 
 export function Abas({ atual }: { atual: string }) {
   return (

@@ -6,7 +6,7 @@ export default async function CriarConta({ searchParams }: { searchParams: Promi
   return (
     <>
       <Abas atual="/criar-conta" />
-      <p className="muted sm" style={{ marginTop: 0 }}>O app é para investidores da HAV Energia. Informe o e-mail que você passou à equipe e enviaremos um link para criar sua senha.</p>
+      <p className="muted sm" style={{ marginTop: 0 }}>Já é investidor da HAV Energia? Informe o e-mail que você passou à equipe e enviaremos o link para criar sua senha.</p>
       {enviado ? (
         <div className="aviso ok">Se esse e-mail estiver cadastrado, o link chega em instantes. Confira também a caixa de spam.</div>
       ) : (
