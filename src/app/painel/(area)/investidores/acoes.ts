@@ -95,7 +95,14 @@ export async function excluirInvestidor(fd: FormData) {
     SELECT 1 WHERE EXISTS (SELECT 1 FROM cotas WHERE investidor_id = ${id})
       OR EXISTS (SELECT 1 FROM rateios WHERE investidor_id = ${id}) OR EXISTS (SELECT 1 FROM interesses WHERE investidor_id = ${id})`;
   if (mov) redirect(`/painel/investidores/${id}/editar?erro=movimento`);
-  const r = await sql`DELETE FROM investidores WHERE id = ${id} RETURNING id`;
+  // Links de acesso, avisos e fila de e-mail não são movimento: saem junto
+  // (sem isso o banco recusa excluir quem já recebeu convite para o app).
+  const r = await sql.begin(async (tx) => {
+    await tx`DELETE FROM acesso_tokens WHERE investidor_id = ${id}`;
+    await tx`DELETE FROM avisos_investidor WHERE investidor_id = ${id}`;
+    await tx`DELETE FROM envios_email WHERE investidor_id = ${id}`;
+    return tx`DELETE FROM investidores WHERE id = ${id} RETURNING id`;
+  });
   if (r.length) await audit(`usuario:${u.id}`, "investidor_excluido", "investidor", id);
   redirect("/painel/investidores?ok=excluido");
 }
